@@ -27,17 +27,13 @@ class Alias {
   std::vector<int> large_;
 
  public:
-  int n() const {
-    return n_;
-  }
+  int n() const { return n_; }
 
  public:
   Alias() : n_(0) {}
   void Build(const std::vector<double>& prob, double prob_sum);
 
-  int Sample() const {
-    return Sample(Rand::Double01());
-  }
+  int Sample() const { return Sample(Rand::Double01()); }
 
   // u1 is in [0, 1)
   int Sample(double u1) const {

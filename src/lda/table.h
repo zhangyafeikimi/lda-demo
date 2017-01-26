@@ -1,7 +1,7 @@
 // Copyright (c) 2015-2017 Contibutors.
 // Author: Yafei Zhang (zhangyafeikimi@gmail.com)
 //
-// table, tables
+// count table and tables
 //
 
 #ifndef SRC_LDA_TABLE_H_
@@ -44,9 +44,7 @@ class DenseTable : public ITable<T> {
  public:
   DenseTable() {}
 
-  void Init(int size) {
-    storage_.resize(size);
-  }
+  void Init(int size) { storage_.resize(size); }
 
   virtual T Inc(int id, T count) {
     T& r = storage_[id];
@@ -61,9 +59,7 @@ class DenseTable : public ITable<T> {
     return r;
   }
 
-  virtual T Count(int id) const {
-    return storage_[id];
-  }
+  virtual T Count(int id) const { return storage_[id]; }
 
   virtual int NextNonZeroCountIndex(int index) const {
     const int size = (int)storage_.size();
@@ -79,25 +75,15 @@ class DenseTable : public ITable<T> {
     return index;
   }
 
-  virtual int Size() const {
-    return (int)storage_.size();
-  }
+  virtual int Size() const { return (int)storage_.size(); }
 
-  virtual int GetId(int index) const {
-    return index;
-  }
+  virtual int GetId(int index) const { return index; }
 
-  virtual T GetCount(int index) const {
-    return storage_[index];
-  }
+  virtual T GetCount(int index) const { return storage_[index]; }
 
-  T& operator[](int id) {
-    return storage_[id];
-  }
+  T& operator[](int id) { return storage_[id]; }
 
-  T operator[](int id) const {
-    return storage_[id];
-  }
+  T operator[](int id) const { return storage_[id]; }
 };
 
 template <class T>
@@ -107,8 +93,7 @@ class ArrayBufTable : public ITable<T> {
   int size_;
 
  public:
-  ArrayBufTable(T* storage, int size)
-    : storage_(storage), size_(size) {}
+  ArrayBufTable(T* storage, int size) : storage_(storage), size_(size) {}
 
   virtual T Inc(int id, T count) {
     T& r = storage_[id];
@@ -123,9 +108,7 @@ class ArrayBufTable : public ITable<T> {
     return r;
   }
 
-  virtual T Count(int id) const {
-    return storage_[id];
-  }
+  virtual T Count(int id) const { return storage_[id]; }
 
   virtual int NextNonZeroCountIndex(int index) const {
     if (index >= size_) {
@@ -141,17 +124,11 @@ class ArrayBufTable : public ITable<T> {
     return index;
   }
 
-  virtual int Size() const {
-    return size_;
-  }
+  virtual int Size() const { return size_; }
 
-  virtual int GetId(int index) const {
-    return index;
-  }
+  virtual int GetId(int index) const { return index; }
 
-  virtual T GetCount(int index) const {
-    return storage_[index];
-  }
+  virtual T GetCount(int index) const { return storage_[index]; }
 };
 
 template <class T>
@@ -166,12 +143,8 @@ class SparseTable : public ITable<T> {
     bool operator()(const IdCount& a, const IdCount& b) const {
       return a.id < b.id;
     }
-    bool operator()(const IdCount& a, int b) const {
-      return a.id < b;
-    }
-    bool operator()(int a, const IdCount& b) const {
-      return a < b.id;
-    }
+    bool operator()(const IdCount& a, int b) const { return a.id < b; }
+    bool operator()(int a, const IdCount& b) const { return a < b.id; }
   };
 
   const IdCountCompare compare_;
@@ -182,7 +155,7 @@ class SparseTable : public ITable<T> {
 
   virtual T Inc(int id, T count) {
     typename std::vector<IdCount>::iterator it =
-      std::lower_bound(storage_.begin(), storage_.end(), id, compare_);
+        std::lower_bound(storage_.begin(), storage_.end(), id, compare_);
     if (it != storage_.end() && it->id == id) {
       it->count += count;
       return it->count;
@@ -195,7 +168,7 @@ class SparseTable : public ITable<T> {
 
   virtual T Dec(int id, T count) {
     typename std::vector<IdCount>::iterator it =
-      std::lower_bound(storage_.begin(), storage_.end(), id, compare_);
+        std::lower_bound(storage_.begin(), storage_.end(), id, compare_);
     if (it != storage_.end() && it->id == id) {
       assert(it->count >= count);
       it->count -= count;
@@ -213,7 +186,7 @@ class SparseTable : public ITable<T> {
 
   virtual T Count(int id) const {
     typename std::vector<IdCount>::const_iterator it =
-      std::lower_bound(storage_.begin(), storage_.end(), id, compare_);
+        std::lower_bound(storage_.begin(), storage_.end(), id, compare_);
     if (it != storage_.end() && it->id == id) {
       assert(it->count > 0);
       return it->count;
@@ -221,54 +194,30 @@ class SparseTable : public ITable<T> {
     return 0;
   }
 
-  virtual int NextNonZeroCountIndex(int index) const {
-    return index;
-  }
+  virtual int NextNonZeroCountIndex(int index) const { return index; }
 
-  virtual int Size() const {
-    return (int)storage_.size();
-  }
+  virtual int Size() const { return (int)storage_.size(); }
 
-  virtual int GetId(int index) const {
-    return storage_[index].id;
-  }
+  virtual int GetId(int index) const { return storage_[index].id; }
 
-  virtual T GetCount(int index) const {
-    return storage_[index].count;
-  }
+  virtual T GetCount(int index) const { return storage_[index].count; }
 };
 
 static const int prime_list[] = {
-  13u,
-  23u,
-  53u,
-  97u,
-  193u,
-  389u,
-  769u,
-  1543u,
-  3079u,
-  6151u,
-  12289u,
-  24593u,
-  49157u,
-  98317u,
-  196613u,
-  393241u,
-  786433u,
-  1572869u,
-  3145739u,
-  // 6291469u,
-  // 12582917u,
-  // 25165843u,
-  // 50331653u,
-  // 100663319u,
-  // 201326611u,
-  // 402653189u,
-  // 805306457u,
-  // 1610612741u,
-  // 3221225473u,
-  // 4294967291u,
+    13u,     23u,     53u,     97u,      193u,     389u,   769u,
+    1543u,   3079u,   6151u,   12289u,   24593u,   49157u, 98317u,
+    196613u, 393241u, 786433u, 1572869u, 3145739u,
+    // 6291469u,
+    // 12582917u,
+    // 25165843u,
+    // 50331653u,
+    // 100663319u,
+    // 201326611u,
+    // 402653189u,
+    // 805306457u,
+    // 1610612741u,
+    // 3221225473u,
+    // 4294967291u,
 };
 
 static const int prime_list_size = sizeof(prime_list) / sizeof(prime_list[0]);
@@ -357,9 +306,7 @@ class HashTable : public ITable<T> {
   }
 
  public:
-  HashTable() : used_(0), deleted_(0) {
-    storage_.resize(prime_list[0]);
-  }
+  HashTable() : used_(0), deleted_(0) { storage_.resize(prime_list[0]); }
 
   virtual ~HashTable() {}
 
@@ -427,9 +374,7 @@ class HashTable : public ITable<T> {
     return index;
   }
 
-  virtual int Size() const {
-    return (int)storage_.size();
-  }
+  virtual int Size() const { return (int)storage_.size(); }
 
   virtual int GetId(int index) const {
     assert(storage_[index].flag == kUsed);
@@ -467,9 +412,7 @@ class Table {
     return *this;
   }
 
-  ~Table() {
-    delete impl_;
-  }
+  ~Table() { delete impl_; }
 
   void InitDense(int size) {
     DenseTableT* hist = new DenseTableT();
@@ -481,13 +424,9 @@ class Table {
     impl_ = new ArrayBufTableT(storage, size);
   }
 
-  void InitSparse() {
-    impl_ = new SparseTableT();
-  }
+  void InitSparse() { impl_ = new SparseTableT(); }
 
-  void InitHash() {
-    impl_ = new HashTableT();
-  }
+  void InitHash() { impl_ = new HashTableT(); }
 
  public:
   class const_iterator {
@@ -497,15 +436,11 @@ class Table {
 
    public:
     const_iterator(const ITableT* impl, int index)
-      : impl_(impl), index_(index) {}
+        : impl_(impl), index_(index) {}
 
-    int id() const {
-      return impl_->GetId(index_);
-    }
+    int id() const { return impl_->GetId(index_); }
 
-    T count() const {
-      return impl_->GetCount(index_);
-    }
+    T count() const { return impl_->GetCount(index_); }
 
     bool operator==(const const_iterator& right) const {
       return impl_ == right.impl_ && index_ == right.index_;
@@ -526,9 +461,7 @@ class Table {
     return const_iterator(impl_, impl_->NextNonZeroCountIndex(0));
   }
 
-  const_iterator end() const {
-    return const_iterator(impl_, impl_->Size());
-  }
+  const_iterator end() const { return const_iterator(impl_, impl_->Size()); }
 
   class __Proxy {
    private:
@@ -538,34 +471,20 @@ class Table {
    public:
     __Proxy(ITableT* impl, int id) : impl_(impl), id_(id) {}
 
-    T operator++() {
-      return impl_->Inc(id_, 1);
-    }
+    T operator++() { return impl_->Inc(id_, 1); }
 
-    T operator+=(T count) {
-      return impl_->Inc(id_, count);
-    }
+    T operator+=(T count) { return impl_->Inc(id_, count); }
 
-    T operator--() {
-      return impl_->Dec(id_, 1);
-    }
+    T operator--() { return impl_->Dec(id_, 1); }
 
-    T operator-=(T count) {
-      return impl_->Dec(id_, count);
-    }
+    T operator-=(T count) { return impl_->Dec(id_, count); }
 
-    operator T() {
-      return impl_->Count(id_);
-    }
+    operator T() { return impl_->Count(id_); }
   };
 
-  __Proxy operator[](int id) {
-    return __Proxy(impl_, id);
-  }
+  __Proxy operator[](int id) { return __Proxy(impl_, id); }
 
-  T operator[](int id) const {
-    return impl_->Count(id);
-  }
+  T operator[](int id) const { return impl_->Count(id); }
 };
 
 template <class T>
@@ -586,13 +505,9 @@ class Tables {
  public:
   Tables() : d1_(0), d2_(0) {}
 
-  int d1() const {
-    return d1_;
-  }
+  int d1() const { return d1_; }
 
-  int d2() const {
-    return d2_;
-  }
+  int d2() const { return d2_; }
 
   void Init(int d1, int d2, int type) {
     d1_ = d1;
@@ -600,37 +515,33 @@ class Tables {
     matrix_.resize(d1);
 
     switch (type) {
-    case kHashTable:
-      for (int i = 0; i < d1_; i++) {
-        matrix_[i].InitHash();
-      }
-      break;
-    case kSparseTable:
-      for (int i = 0; i < d1_; i++) {
-        matrix_[i].InitSparse();
-      }
-      break;
-    case kDenseTable:
-      for (int i = 0; i < d1_; i++) {
-        matrix_[i].InitDense(d2_);
-      }
-      break;
-    case kArrayBufTable:
-      array_buf_.resize(d1_ * d2_);
-      for (int i = 0; i < d1_; i++) {
-        matrix_[i].InitArrayBuf(&array_buf_[0] + i * d2_, d2_);
-      }
-      break;
+      case kHashTable:
+        for (int i = 0; i < d1_; i++) {
+          matrix_[i].InitHash();
+        }
+        break;
+      case kSparseTable:
+        for (int i = 0; i < d1_; i++) {
+          matrix_[i].InitSparse();
+        }
+        break;
+      case kDenseTable:
+        for (int i = 0; i < d1_; i++) {
+          matrix_[i].InitDense(d2_);
+        }
+        break;
+      case kArrayBufTable:
+        array_buf_.resize(d1_ * d2_);
+        for (int i = 0; i < d1_; i++) {
+          matrix_[i].InitArrayBuf(&array_buf_[0] + i * d2_, d2_);
+        }
+        break;
     }
   }
 
-  TableT& operator[](int i) {
-    return matrix_[i];
-  }
+  TableT& operator[](int i) { return matrix_[i]; }
 
-  const TableT& operator[](int i) const {
-    return matrix_[i];
-  }
+  const TableT& operator[](int i) const { return matrix_[i]; }
 };
 
 typedef Table<int> IntTable;

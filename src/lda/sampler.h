@@ -11,7 +11,6 @@
 #include <vector>
 #include "lda/alias.h"
 #include "lda/model.h"
-#include "lda/process-stat.h"
 
 /************************************************************************/
 /* SamplerBase */
@@ -41,8 +40,8 @@ class SamplerBase : public Model {
   virtual void HPOpt_PostSampleDocument(int m);
 
   bool HPOpt_Enabled() const {
-    if (hp_opt_ && iteration_ > burnin_iteration_
-        && (iteration_ % hp_opt_interval_) == 0) {
+    if (hp_opt_ && iteration_ > burnin_iteration_ &&
+        (iteration_ % hp_opt_interval_) == 0) {
       return true;
     }
     return false;
@@ -52,8 +51,7 @@ class SamplerBase : public Model {
   virtual int InitializeInfer();
   virtual void InferDocument(Word* word, int doc_length,
                              IntTable* doc_topics_count);
-  virtual void InferDocument(Word* word, int doc_length,
-                             int* most_prob_topic);
+  virtual void InferDocument(Word* word, int doc_length, int* most_prob_topic);
   virtual void InferDocument(int* word_ids, int doc_length,
                              IntTable* doc_topics_count);
   virtual void InferDocument(int* word_ids, int doc_length,
@@ -109,7 +107,7 @@ class SparseLDASampler : public SamplerBase {
 class AliasLDASampler : public SamplerBase {
  private:
   std::vector<double> p_pdf_;
-  std::vector<double> q_sums_;  // for each word v
+  std::vector<double> q_sums_;                // for each word v
   std::vector<std::vector<int> > q_samples_;  // for each word v
   std::vector<double> q_pdf_;
   Alias q_alias_table_;
@@ -120,9 +118,7 @@ class AliasLDASampler : public SamplerBase {
   AliasLDASampler() : mh_step_(0) {}
 
   // setters
-  int& mh_step() {
-    return mh_step_;
-  }
+  int& mh_step() { return mh_step_; }
   // end of setters
 
   virtual int InitializeSampler();
@@ -145,22 +141,15 @@ class LightLDASampler : public SamplerBase {
   int enable_doc_proposal_;
 
  public:
-  LightLDASampler() : mh_step_(0),
-    enable_word_proposal_(1),
-    enable_doc_proposal_(1) {}
+  LightLDASampler()
+      : mh_step_(0), enable_word_proposal_(1), enable_doc_proposal_(1) {}
 
   // setters
-  int& mh_step() {
-    return mh_step_;
-  }
+  int& mh_step() { return mh_step_; }
 
-  int& enable_word_proposal() {
-    return enable_word_proposal_;
-  }
+  int& enable_word_proposal() { return enable_word_proposal_; }
 
-  int& enable_doc_proposal() {
-    return enable_doc_proposal_;
-  }
+  int& enable_doc_proposal() { return enable_doc_proposal_; }
   // end of setters
 
   virtual int InitializeSampler();

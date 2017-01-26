@@ -17,7 +17,6 @@
     <ClInclude Include="..\src\lda\model.h" />
     <ClInclude Include="..\src\lda\mt19937ar.h" />
     <ClInclude Include="..\src\lda\mt64.h" />
-    <ClInclude Include="..\src\lda\process-stat.h" />
     <ClInclude Include="..\src\lda\rand.h" />
     <ClInclude Include="..\src\lda\sampler.h" />
     <ClInclude Include="..\src\lda\table.h" />
@@ -28,7 +27,6 @@
     <ClCompile Include="..\src\lda\model.cc" />
     <ClCompile Include="..\src\lda\mt19937-64.c" />
     <ClCompile Include="..\src\lda\mt19937ar.c" />
-    <ClCompile Include="..\src\lda\process-stat.cc" />
     <ClCompile Include="..\src\lda\rand.cc" />
     <ClCompile Include="..\src\lda\sampler.cc" />
   </ItemGroup>

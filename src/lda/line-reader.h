@@ -16,13 +16,9 @@ struct LineReader {
  public:
   char* buf;
 
-  LineReader() : len_(4096) {
-    buf = _Malloc(char, len_);
-  }
+  LineReader() : len_(4096) { buf = _Malloc(char, len_); }
 
-  ~LineReader() {
-    free(buf);
-  }
+  ~LineReader() { free(buf); }
 
   char* ReadLine(FILE* fp) {
     size_t new_len;

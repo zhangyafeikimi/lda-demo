@@ -29,7 +29,8 @@
    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
    "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
    LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-   A PARTICULAR PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT OWNER OR
+   A PARTICULAR PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT OWNER
+   OR
    CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
    EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
    PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
@@ -57,9 +58,9 @@
 #define SRC_LDA_MT64_H_
 
 #if defined __cplusplus
-# define EXTERN extern "C"
+#define EXTERN extern "C"
 #else
-# define EXTERN extern
+#define EXTERN extern
 #endif
 
 /* initializes mt[NN] with a seed */
@@ -73,7 +74,6 @@ EXTERN void init_by_array64(unsigned long long init_key[],
 
 /* generates a random number on [0, 2^64-1]-interval */
 EXTERN unsigned long long genrand64_int64(void);
-
 
 /* generates a random number on [0, 2^63-1]-interval */
 EXTERN long long genrand64_int63(void);

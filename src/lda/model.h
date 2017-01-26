@@ -14,7 +14,7 @@
 
 struct Doc {
   int index;  // index in "SamplerBase::words_"
-  int N;  // # of words
+  int N;      // # of words
 };
 
 struct Word {
@@ -90,85 +90,56 @@ class Model {
   int storage_type_;
 
  public:
-  Model() : mode_(kSampleMode),
-    M_(0),
-    V_(0),
-    K_(0),
-    hp_sum_alpha_(0.0),
-    hp_beta_(0.0),
-    hp_opt_(0),
-    hp_opt_interval_(0),
-    hp_opt_alpha_shape_(0.0),
-    hp_opt_alpha_scale_(0.0),
-    hp_opt_alpha_iteration_(0),
-    hp_opt_beta_iteration_(0),
-    total_iteration_(0),
-    burnin_iteration_(0),
-    log_likelihood_interval_(0),
-    iteration_(0),
-    storage_type_(kHashTable) {}
+  Model()
+      : mode_(kSampleMode),
+        M_(0),
+        V_(0),
+        K_(0),
+        hp_sum_alpha_(0.0),
+        hp_beta_(0.0),
+        hp_opt_(0),
+        hp_opt_interval_(0),
+        hp_opt_alpha_shape_(0.0),
+        hp_opt_alpha_scale_(0.0),
+        hp_opt_alpha_iteration_(0),
+        hp_opt_beta_iteration_(0),
+        total_iteration_(0),
+        burnin_iteration_(0),
+        log_likelihood_interval_(0),
+        iteration_(0),
+        storage_type_(kHashTable) {}
   virtual ~Model() {}
 
   // getters & setters
-  int M() {
-    return M_;
-  }
+  int M() { return M_; }
 
-  int V() {
-    return V_;
-  }
+  int V() { return V_; }
 
-  int& K() {
-    return K_;
-  }
+  int& K() { return K_; }
 
-  double& alpha() {
-    return hp_sum_alpha_;
-  }
+  double& alpha() { return hp_sum_alpha_; }
 
-  double& beta() {
-    return hp_beta_;
-  }
+  double& beta() { return hp_beta_; }
 
-  int& hp_opt() {
-    return hp_opt_;
-  }
+  int& hp_opt() { return hp_opt_; }
 
-  int& hp_opt_interval() {
-    return hp_opt_interval_;
-  }
+  int& hp_opt_interval() { return hp_opt_interval_; }
 
-  double& hp_opt_alpha_shape() {
-    return hp_opt_alpha_shape_;
-  }
+  double& hp_opt_alpha_shape() { return hp_opt_alpha_shape_; }
 
-  double& hp_opt_alpha_scale() {
-    return hp_opt_alpha_scale_;
-  }
+  double& hp_opt_alpha_scale() { return hp_opt_alpha_scale_; }
 
-  int& hp_opt_alpha_iteration() {
-    return hp_opt_alpha_iteration_;
-  }
+  int& hp_opt_alpha_iteration() { return hp_opt_alpha_iteration_; }
 
-  int& hp_opt_beta_iteration() {
-    return hp_opt_beta_iteration_;
-  }
+  int& hp_opt_beta_iteration() { return hp_opt_beta_iteration_; }
 
-  int& total_iteration() {
-    return total_iteration_;
-  }
+  int& total_iteration() { return total_iteration_; }
 
-  int& burnin_iteration() {
-    return burnin_iteration_;
-  }
+  int& burnin_iteration() { return burnin_iteration_; }
 
-  int& log_likelihood_interval() {
-    return log_likelihood_interval_;
-  }
+  int& log_likelihood_interval() { return log_likelihood_interval_; }
 
-  int& storage_type() {
-    return storage_type_;
-  }
+  int& storage_type() { return storage_type_; }
   // end of getters & setters
 
   int LoadCorpus(const std::string& filename, int with_id);

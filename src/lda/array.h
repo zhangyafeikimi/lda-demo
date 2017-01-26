@@ -25,13 +25,9 @@ class Array2D {
  public:
   Array2D() : d1_(0), d2_(0) {}
 
-  int d1() const {
-    return d1_;
-  }
+  int d1() const { return d1_; }
 
-  int d2() const {
-    return d2_;
-  }
+  int d2() const { return d2_; }
 
   void Init(int d1, int d2, T t = 0) {
     d1_ = d1;
@@ -39,13 +35,9 @@ class Array2D {
     storage_.resize(d1 * d2, t);
   }
 
-  T* operator[](int i) {
-    return &storage_[0] + d2_ * i;
-  }
+  T* operator[](int i) { return &storage_[0] + d2_ * i; }
 
-  const T* operator[](int i) const {
-    return &storage_[0] + d2_ * i;
-  }
+  const T* operator[](int i) const { return &storage_[0] + d2_ * i; }
 };
 
 #endif  // SRC_LDA_ARRAY_H_

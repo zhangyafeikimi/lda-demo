@@ -19,7 +19,7 @@ static int SampleCDF(const std::vector<double>& cdf, double u) {
       }
     }
     return i;
-  } else  {
+  } else {
     // binary search
     int count = size, half_count;
     int first = 0, middle;
@@ -181,30 +181,25 @@ int SamplerBase::Train() {
 
   for (iteration_ = 1; iteration_ <= total_iteration_; iteration_++) {
     time_t iter_begin, iter_end;
-    int cpu;
-    uint64_t mem, vmem;
 
-    (void)GetCPUUsage();
     time(&iter_begin);
     Log("Iteration %d started.\n", iteration_);
     PreSampleCorpus();
     SampleCorpus();
     PostSampleCorpus();
     time(&iter_end);
-    cpu = GetCPUUsage();
-    (void)GetMemoryUsage(&mem, &vmem);
-    Log("Iteration %d ended, cost %d seconds, "
-        "%d%% CPU, %.0lf bytes memory.\n",
-        iteration_, (int)(iter_end - iter_begin), cpu, (double)mem);
 
-    if (iteration_ > burnin_iteration_
-        && iteration_ % log_likelihood_interval_ == 0) {
+    Log("Iteration %d ended, cost %d seconds.\n", iteration_,
+        (int)(iter_end - iter_begin));
+
+    if (iteration_ > burnin_iteration_ &&
+        iteration_ % log_likelihood_interval_ == 0) {
       time(&iter_begin);
       Log("Calculating LogLikelihood.\n");
       const double llh = LogLikelihood();
       time(&iter_end);
-      Log("LogLikelihood(total/word)=%lg/%lg, cost %d seconds.\n",
-          llh, llh / words_.size(), (int)(iter_end - iter_begin));
+      Log("LogLikelihood(total/word)=%lg/%lg, cost %d seconds.\n", llh,
+          llh / words_.size(), (int)(iter_end - iter_begin));
     }
   }
 
@@ -213,13 +208,9 @@ int SamplerBase::Train() {
   return 0;
 }
 
-void SamplerBase::PreSampleCorpus() {
-  HPOpt_Initialize();
-}
+void SamplerBase::PreSampleCorpus() { HPOpt_Initialize(); }
 
-void SamplerBase::PostSampleCorpus() {
-  HPOpt_Optimize();
-}
+void SamplerBase::PostSampleCorpus() { HPOpt_Optimize(); }
 
 void SamplerBase::SampleCorpus() {
   for (int m = 0; m < M_; m++) {
@@ -231,9 +222,7 @@ void SamplerBase::SampleCorpus() {
 
 void SamplerBase::PreSampleDocument(int m) {}
 
-void SamplerBase::PostSampleDocument(int m) {
-  HPOpt_PostSampleDocument(m);
-}
+void SamplerBase::PostSampleDocument(int m) { HPOpt_PostSampleDocument(m); }
 
 void SamplerBase::SampleDocument(int m) {
   const Doc& doc = docs_[m];
@@ -287,15 +276,14 @@ void SamplerBase::HPOpt_OptimizeAlpha() {
     denom -= 1.0 / hp_opt_alpha_scale_;
 
     hp_sum_alpha_ = 0.0;
-    for (int k = 0, size = (int)docs_topic_count_hist_.size();
-         k < size; k++) {
+    for (int k = 0, size = (int)docs_topic_count_hist_.size(); k < size; k++) {
       double num = 0.0;
       double alpha_k = hp_alpha_[k];
       const std::vector<int>& docs_topic_k_count_hist =
-        docs_topic_count_hist_[k];
+          docs_topic_count_hist_[k];
       diff_digamma = 0.0;
-      for (int j = 1, size = (int)docs_topic_count_hist_[k].size();
-           j < size; j++) {
+      for (int j = 1, size = (int)docs_topic_count_hist_[k].size(); j < size;
+           j++) {
         diff_digamma += 1.0 / (j - 1 + alpha_k);
         num += docs_topic_k_count_hist[j] * diff_digamma;
       }
@@ -337,8 +325,7 @@ void SamplerBase::HPOpt_OptimizeBeta() {
   for (int i = 0; i < hp_opt_beta_iteration_; i++) {
     double num = 0.0;
     double diff_digamma = 0.0;
-    for (int j = 1, size = (int)word_topic_count_hist_.size();
-         j < size; j++) {
+    for (int j = 1, size = (int)word_topic_count_hist_.size(); j < size; j++) {
       diff_digamma += 1.0 / (j - 1 + hp_beta_);
       num += diff_digamma * word_topic_count_hist_[j];
     }
@@ -483,7 +470,7 @@ void GibbsSampler::SampleDocument(Word* word, int doc_length,
     IntTable& word_topics_count = words_topics_count_[v];
     int k, new_k;
 
-    if (mode_ ==  kSampleMode) {
+    if (mode_ == kSampleMode) {
       --topics_count_[old_k];
       --word_topics_count[old_k];
     }
@@ -491,17 +478,17 @@ void GibbsSampler::SampleDocument(Word* word, int doc_length,
 
     word_topic_cdf_[0] = 0.0;
     for (k = 0; k < K_ - 1; k++) {
-      word_topic_cdf_[k] += (word_topics_count[k] + hp_beta_)
-                            / (topics_count_[k] + hp_sum_beta_)
-                            * ((*doc_topics_count)[k] + hp_alpha_[k]);
+      word_topic_cdf_[k] += (word_topics_count[k] + hp_beta_) /
+                            (topics_count_[k] + hp_sum_beta_) *
+                            ((*doc_topics_count)[k] + hp_alpha_[k]);
       word_topic_cdf_[k + 1] = word_topic_cdf_[k];
     }
-    word_topic_cdf_[k] += (word_topics_count[k] + hp_beta_)
-                          / (topics_count_[k] + hp_sum_beta_)
-                          * ((*doc_topics_count)[k] + hp_alpha_[k]);
+    word_topic_cdf_[k] += (word_topics_count[k] + hp_beta_) /
+                          (topics_count_[k] + hp_sum_beta_) *
+                          ((*doc_topics_count)[k] + hp_alpha_[k]);
 
     new_k = SampleCDF(word_topic_cdf_);
-    if (mode_ ==  kSampleMode) {
+    if (mode_ == kSampleMode) {
       ++topics_count_[new_k];
       ++word_topics_count[new_k];
     }
@@ -716,10 +703,10 @@ int AliasLDASampler::InitializeInfer() {
 void AliasLDASampler::SampleDocument(Word* word, int doc_length,
                                      IntTable* doc_topics_count) {
   int s, t;
-  // Macro SMOLA_ALIAS_LDA implements the pure algorithm from
-  // Alex Smola's paper. Otherwise,
-  // some of my changes are made to make it easier and faster.
-  // #define SMOLA_ALIAS_LDA
+// Macro SMOLA_ALIAS_LDA implements the pure algorithm from
+// Alex Smola's paper. Otherwise,
+// some of my changes are made to make it easier and faster.
+// #define SMOLA_ALIAS_LDA
 #if defined SMOLA_ALIAS_LDA
   int N_s, N_vs, N_ms, N_t, N_vt, N_mt;
 #endif
@@ -767,10 +754,9 @@ void AliasLDASampler::SampleDocument(Word* word, int doc_length,
     for (; first != last; ++first) {
       const int k = first.id();
       double& pdf = p_pdf_[k];
-      pdf = first.count()
-            * (word_topics_count[k] + hp_beta_)
-            / (topics_count_[k] + hp_sum_beta_);
-      p_sum  += pdf;
+      pdf = first.count() * (word_topics_count[k] + hp_beta_) /
+            (topics_count_[k] + hp_sum_beta_);
+      p_sum += pdf;
     }
 
     // prepare samples from q: second part of the proposal
@@ -787,35 +773,29 @@ void AliasLDASampler::SampleDocument(Word* word, int doc_length,
         for (; first != last; ++first) {
           const int k = first.id();
           double& pdf = q_pdf_[k];
-          pdf = hp_alpha_[k]
-                * (word_topics_count[k] + hp_beta_)
-                / (topics_count_[k] + hp_sum_beta_);
+          pdf = hp_alpha_[k] * (word_topics_count[k] + hp_beta_) /
+                (topics_count_[k] + hp_sum_beta_);
           q_sum += pdf;
         }
         for (int k = 0; k < K_; k++) {
           double& pdf = q_pdf_[k];
           if (pdf == 0.0) {
-            pdf = hp_alpha_[k]
-                  * hp_beta_
-                  / (topics_count_[k] + hp_sum_beta_);
+            pdf = hp_alpha_[k] * hp_beta_ / (topics_count_[k] + hp_sum_beta_);
             q_sum += pdf;
           }
         }
       } else {
         for (int k = 0; k < K_; k++) {
           double& pdf = q_pdf_[k];
-          pdf = hp_alpha_[k]
-                * (word_topics_count[k] + hp_beta_)
-                / (topics_count_[k] + hp_sum_beta_);
+          pdf = hp_alpha_[k] * (word_topics_count[k] + hp_beta_) /
+                (topics_count_[k] + hp_sum_beta_);
           q_sum += pdf;
         }
       }
 #if defined SMOLA_ALIAS_LDA
       double& pdf_s = q_pdf_[s];
       q_sum -= pdf_s;
-      pdf_s = hp_alpha_s
-              * (N_vs + hp_beta_)
-              / (N_s + hp_sum_beta_);
+      pdf_s = hp_alpha_s * (N_vs + hp_beta_) / (N_s + hp_sum_beta_);
       q_sum += pdf_s;
 #endif
       q_sums_[v] = q_sum;
@@ -869,22 +849,19 @@ void AliasLDASampler::SampleDocument(Word* word, int doc_length,
         temp_t = (N_vt_prime + hp_beta_) / (N_t_prime + hp_sum_beta_);
         hp_alpha_t = hp_alpha_[t];
 #if defined SMOLA_ALIAS_LDA
-        accept_rate =
-          (N_mt_prime + hp_alpha_t) / (N_ms_prime + hp_alpha_s)
-          * temp_t / temp_s
-          * (N_ms_prime * temp_s
-             + hp_alpha_s * (N_vs + hp_beta_) / (N_s + hp_sum_beta_))
-          / (N_mt_prime * temp_t
-             + hp_alpha_t* (N_vt + hp_beta_) / (N_t + hp_sum_beta_));
+        accept_rate = (N_mt_prime + hp_alpha_t) / (N_ms_prime + hp_alpha_s) *
+                      temp_t / temp_s *
+                      (N_ms_prime * temp_s +
+                       hp_alpha_s * (N_vs + hp_beta_) / (N_s + hp_sum_beta_)) /
+                      (N_mt_prime * temp_t +
+                       hp_alpha_t * (N_vt + hp_beta_) / (N_t + hp_sum_beta_));
 #else
-        accept_rate =
-          (N_mt_prime + hp_alpha_t) / (N_ms_prime + hp_alpha_s)
-          * temp_t / temp_s
-          * (N_ms_prime + hp_alpha_s) * temp_s
-          / (N_mt_prime + hp_alpha_t) / temp_t;
+        accept_rate = (N_mt_prime + hp_alpha_t) / (N_ms_prime + hp_alpha_s) *
+                      temp_t / temp_s * (N_ms_prime + hp_alpha_s) * temp_s /
+                      (N_mt_prime + hp_alpha_t) / temp_t;
 #endif
         assert(accept_rate >= 0.0);
-        if (/*accept_rate >= 1.0 || */Rand::Double01() < accept_rate) {
+        if (/*accept_rate >= 1.0 || */ Rand::Double01() < accept_rate) {
           word->k = t;
           s = t;
 #if defined SMOLA_ALIAS_LDA
@@ -1008,15 +985,15 @@ void LightLDASampler::SampleDocument(Word* word, int doc_length,
           }
           hp_alpha_t = hp_alpha_[t];
 
-          accept_rate =
-            (N_mt_prime + hp_alpha_t) / (N_ms_prime + hp_alpha_s)
-            * (N_vt_prime + hp_beta_) / (N_vs_prime + hp_beta_)
-            * (N_s_prime + hp_sum_beta_) / (N_t_prime + hp_sum_beta_)
-            * (N_vs + hp_beta_) / (N_vt + hp_beta_)
-            * (N_t + hp_sum_beta_) / (N_s + hp_sum_beta_);
+          accept_rate = (N_mt_prime + hp_alpha_t) / (N_ms_prime + hp_alpha_s) *
+                        (N_vt_prime + hp_beta_) / (N_vs_prime + hp_beta_) *
+                        (N_s_prime + hp_sum_beta_) /
+                        (N_t_prime + hp_sum_beta_) * (N_vs + hp_beta_) /
+                        (N_vt + hp_beta_) * (N_t + hp_sum_beta_) /
+                        (N_s + hp_sum_beta_);
 
           assert(accept_rate >= 0.0);
-          if (/*accept_rate >= 1.0 || */Rand::Double01() < accept_rate) {
+          if (/*accept_rate >= 1.0 || */ Rand::Double01() < accept_rate) {
             word->k = t;
             s = t;
             N_s = N_t;
@@ -1057,14 +1034,14 @@ void LightLDASampler::SampleDocument(Word* word, int doc_length,
           }
           hp_alpha_t = hp_alpha_[t];
 
-          accept_rate =
-            (N_mt_prime + hp_alpha_t) / (N_ms_prime + hp_alpha_s)
-            * (N_vt_prime + hp_beta_) / (N_vs_prime + hp_beta_)
-            * (N_s_prime + hp_sum_beta_) / (N_t_prime + hp_sum_beta_)
-            * (N_ms + hp_alpha_s) / (N_mt + hp_alpha_t);
+          accept_rate = (N_mt_prime + hp_alpha_t) / (N_ms_prime + hp_alpha_s) *
+                        (N_vt_prime + hp_beta_) / (N_vs_prime + hp_beta_) *
+                        (N_s_prime + hp_sum_beta_) /
+                        (N_t_prime + hp_sum_beta_) * (N_ms + hp_alpha_s) /
+                        (N_mt + hp_alpha_t);
 
           assert(accept_rate >= 0.0);
-          if (/*accept_rate >= 1.0 || */Rand::Double01() < accept_rate) {
+          if (/*accept_rate >= 1.0 || */ Rand::Double01() < accept_rate) {
             word->k = t;
             s = t;
             N_s = N_t;
@@ -1080,7 +1057,7 @@ void LightLDASampler::SampleDocument(Word* word, int doc_length,
     }
 
     if (old_k != s) {
-      if (mode_ ==  kSampleMode) {
+      if (mode_ == kSampleMode) {
         --topics_count_[old_k];
         --word_topics_count[old_k];
         ++topics_count_[s];
@@ -1120,8 +1097,8 @@ int LightLDASampler::SampleWithWord(int v) {
     } else {
       for (int k = 0; k < K_; k++) {
         double& pdf = word_topics_pdf_[k];
-        pdf = (word_topics_count[k] + hp_beta_)
-              / (topics_count_[k] + hp_sum_beta_);
+        pdf = (word_topics_count[k] + hp_beta_) /
+              (topics_count_[k] + hp_sum_beta_);
         sum += pdf;
       }
     }

@@ -101,23 +101,10 @@ void Usage() {
           "    -enable_doc_proposal 0/1\n"
           "      Enable doc proposal(lightlda).\n"
           "      Default is \"%d\".\n",
-          doc_with_id,
-          sampler.c_str(),
-          K,
-          alpha,
-          beta,
-          hp_opt,
-          hp_opt_interval,
-          hp_opt_alpha_shape,
-          hp_opt_alpha_scale,
-          hp_opt_alpha_iteration,
-          hp_opt_beta_iteration,
-          total_iteration,
-          burnin_iteration,
-          log_likelihood_interval,
-          storage_type,
-          mh_step,
-          enable_word_proposal,
+          doc_with_id, sampler.c_str(), K, alpha, beta, hp_opt, hp_opt_interval,
+          hp_opt_alpha_shape, hp_opt_alpha_scale, hp_opt_alpha_iteration,
+          hp_opt_beta_iteration, total_iteration, burnin_iteration,
+          log_likelihood_interval, storage_type, mh_step, enable_word_proposal,
           enable_doc_proposal);
   exit(1);
 }
@@ -222,19 +209,17 @@ int main(int argc, char** argv) {
     Usage();
   }
 
-#define CHECK_EXIT(condition) \
-  do { \
-    if (!(condition)) { \
+#define CHECK_EXIT(condition)                         \
+  do {                                                \
+    if (!(condition)) {                               \
       fprintf(stderr, "Must have: %s\n", #condition); \
-      exit(1); \
-    } \
+      exit(1);                                        \
+    }                                                 \
   } while (0)
 
   CHECK_EXIT(doc_with_id >= 0 && doc_with_id <= 1);
-  CHECK_EXIT(sampler == "lda"
-             || sampler == "sparselda"
-             || sampler == "aliaslda"
-             || sampler == "lightlda");
+  CHECK_EXIT(sampler == "lda" || sampler == "sparselda" ||
+             sampler == "aliaslda" || sampler == "lightlda");
   CHECK_EXIT(K >= 2);
   CHECK_EXIT(alpha >= 0.0);
   CHECK_EXIT(beta > 0.0);
@@ -292,9 +277,7 @@ int main(int argc, char** argv) {
   p->log_likelihood_interval() = log_likelihood_interval;
   p->storage_type() = storage_type;
 
-  {
-    p->LoadCorpus(input_corpus_filename, doc_with_id);
-  }
+  { p->LoadCorpus(input_corpus_filename, doc_with_id); }
   p->Train();
   p->SaveModel(output_prefix);
   delete p;

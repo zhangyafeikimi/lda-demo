@@ -195,8 +195,8 @@ void Model::CollectTheta(Array2D<double>* theta) const {
     const IntTable& doc_topics_count = docs_topics_count_[m];
     double* theta_m = (*theta)[m];
     for (int k = 0; k < K_; k++) {
-      theta_m[k] = (doc_topics_count[k] + hp_alpha_[k])
-                   / (doc.N + hp_sum_alpha_);
+      theta_m[k] =
+          (doc_topics_count[k] + hp_alpha_[k]) / (doc.N + hp_sum_alpha_);
     }
   }
 }
@@ -207,8 +207,8 @@ void Model::CollectPhi(Array2D<double>* phi) const {
     const int topics_count_k = topics_count_[k];
     double* phi_k = (*phi)[k];
     for (int v = 0; v < V_; v++) {
-      phi_k[v] = (words_topics_count_[v][k] + hp_beta_)
-                 / (topics_count_k + hp_sum_beta_);
+      phi_k[v] = (words_topics_count_[v][k] + hp_beta_) /
+                 (topics_count_k + hp_sum_beta_);
     }
   }
 }

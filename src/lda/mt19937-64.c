@@ -29,7 +29,8 @@
    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
    "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
    LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-   A PARTICULAR PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT OWNER OR
+   A PARTICULAR PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT OWNER
+   OR
    CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
    EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
    PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
@@ -53,7 +54,6 @@
    email: m-mat @ math.sci.hiroshima-u.ac.jp (remove spaces)
 */
 
-
 #include <stdio.h>
 #include "mt64.h"
 
@@ -61,8 +61,7 @@
 #define MM 156
 #define MATRIX_A 0xB5026F5AA96619E9ULL
 #define UM 0xFFFFFFFF80000000ULL /* Most significant 33 bits */
-#define LM 0x7FFFFFFFULL /* Least significant 31 bits */
-
+#define LM 0x7FFFFFFFULL         /* Least significant 31 bits */
 
 /* The array for the state vector */
 static unsigned long long mt[NN];
@@ -73,7 +72,8 @@ static int mti = NN + 1;
 void init_genrand64(unsigned long long seed) {
   mt[0] = seed;
   for (mti = 1; mti < NN; mti++) {
-    mt[mti] =  (6364136223846793005ULL * (mt[mti - 1] ^ (mt[mti - 1] >> 62)) + mti);
+    mt[mti] =
+        (6364136223846793005ULL * (mt[mti - 1] ^ (mt[mti - 1] >> 62)) + mti);
   }
 }
 
@@ -88,8 +88,9 @@ void init_by_array64(unsigned long long init_key[],
   j = 0;
   k = (NN > key_length ? NN : key_length);
   for (; k; k--) {
-    mt[i] = (mt[i] ^ ((mt[i - 1] ^ (mt[i - 1] >> 62)) * 3935559000370003845ULL))
-            + init_key[j] + j; /* non linear */
+    mt[i] =
+        (mt[i] ^ ((mt[i - 1] ^ (mt[i - 1] >> 62)) * 3935559000370003845ULL)) +
+        init_key[j] + j; /* non linear */
     i++;
     j++;
     if (i >= NN) {
@@ -101,8 +102,9 @@ void init_by_array64(unsigned long long init_key[],
     }
   }
   for (k = NN - 1; k; k--) {
-    mt[i] = (mt[i] ^ ((mt[i - 1] ^ (mt[i - 1] >> 62)) * 2862933555777941757ULL))
-            - i; /* non linear */
+    mt[i] =
+        (mt[i] ^ ((mt[i - 1] ^ (mt[i - 1] >> 62)) * 2862933555777941757ULL)) -
+        i; /* non linear */
     i++;
     if (i >= NN) {
       mt[0] = mt[NN - 1];
@@ -152,9 +154,7 @@ unsigned long long genrand64_int64(void) {
 }
 
 /* generates a random number on [0, 2^63-1]-interval */
-long long genrand64_int63(void) {
-  return (long long)(genrand64_int64() >> 1);
-}
+long long genrand64_int63(void) { return (long long)(genrand64_int64() >> 1); }
 
 /* generates a random number on [0,1]-real-interval */
 double genrand64_real1(void) {

@@ -38,7 +38,6 @@ src/lda/alias.o \
 src/lda/model.o \
 src/lda/mt19937ar.o \
 src/lda/mt19937-64.o \
-src/lda/process-stat.o \
 src/lda/rand.o \
 src/lda/sampler.o
 

@@ -28,7 +28,8 @@
    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
    "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
    LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-   A PARTICULAR PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT OWNER OR
+   A PARTICULAR PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT OWNER
+   OR
    CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
    EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
    PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
@@ -54,14 +55,13 @@
 #define LOWER_MASK 0x7fffffffUL /* least significant r bits */
 
 static unsigned long mt[N]; /* the array for the state vector  */
-static int mti = N + 1; /* mti==N+1 means mt[N] is not initialized */
+static int mti = N + 1;     /* mti==N+1 means mt[N] is not initialized */
 
 /* initializes mt[N] with a seed */
 void init_genrand(unsigned long s) {
   mt[0] = s & 0xffffffffUL;
   for (mti = 1; mti < N; mti++) {
-    mt[mti] =
-      (1812433253UL * (mt[mti - 1] ^ (mt[mti - 1] >> 30)) + mti);
+    mt[mti] = (1812433253UL * (mt[mti - 1] ^ (mt[mti - 1] >> 30)) + mti);
     /* See Knuth TAOCP Vol2. 3rd Ed. P.106 for multiplier. */
     /* In the previous versions, MSBs of the seed affect   */
     /* only MSBs of the array mt[].                        */
@@ -82,9 +82,9 @@ void init_by_array(unsigned long init_key[], int key_length) {
   j = 0;
   k = (N > key_length ? N : key_length);
   for (; k; k--) {
-    mt[i] = (mt[i] ^ ((mt[i - 1] ^ (mt[i - 1] >> 30)) * 1664525UL))
-            + init_key[j] + j; /* non linear */
-    mt[i] &= 0xffffffffUL; /* for WORDSIZE > 32 machines */
+    mt[i] = (mt[i] ^ ((mt[i - 1] ^ (mt[i - 1] >> 30)) * 1664525UL)) +
+            init_key[j] + j; /* non linear */
+    mt[i] &= 0xffffffffUL;   /* for WORDSIZE > 32 machines */
     i++;
     j++;
     if (i >= N) {
@@ -96,8 +96,8 @@ void init_by_array(unsigned long init_key[], int key_length) {
     }
   }
   for (k = N - 1; k; k--) {
-    mt[i] = (mt[i] ^ ((mt[i - 1] ^ (mt[i - 1] >> 30)) * 1566083941UL))
-            - i; /* non linear */
+    mt[i] = (mt[i] ^ ((mt[i - 1] ^ (mt[i - 1] >> 30)) * 1566083941UL)) -
+            i;             /* non linear */
     mt[i] &= 0xffffffffUL; /* for WORDSIZE > 32 machines */
     i++;
     if (i >= N) {
@@ -118,8 +118,8 @@ unsigned long genrand_int32(void) {
   if (mti >= N) { /* generate N words at one time */
     int kk;
 
-    if (mti == N + 1) { /* if init_genrand() has not been called, */
-      init_genrand(5489UL);  /* a default initial seed is used */
+    if (mti == N + 1) {     /* if init_genrand() has not been called, */
+      init_genrand(5489UL); /* a default initial seed is used */
     }
 
     for (kk = 0; kk < N - M; kk++) {
@@ -148,9 +148,7 @@ unsigned long genrand_int32(void) {
 }
 
 /* generates a random number on [0,0x7fffffff]-interval */
-long genrand_int31(void) {
-  return (long)(genrand_int32() >> 1);
-}
+long genrand_int31(void) { return (long)(genrand_int32() >> 1); }
 
 /* generates a random number on [0,1]-real-interval */
 double genrand_real1(void) {

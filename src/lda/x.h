@@ -22,85 +22,84 @@
 
 #define DIM(a) (sizeof(a) / sizeof(a[0]))
 
-#define _Malloc(type, n) (type*)xmalloc(((size_t)(n))*sizeof(type))
-#define _Realloc(p, type, n) (type*)xrealloc(p, ((size_t)(n))*sizeof(type))
+#define _Malloc(type, n) (type*)xmalloc(((size_t)(n)) * sizeof(type))
+#define _Realloc(p, type, n) (type*)xrealloc(p, ((size_t)(n)) * sizeof(type))
 
 #if defined _NDEBUG || defined NDEBUG
 #define Debug(...)
 #else
-#define Debug(...) do {\
-    time_t t;\
-    struct tm* tm_info;\
-    time(&t);\
-    tm_info = localtime(&t);\
-    fprintf(stderr, "[%.4d-%.2d-%.2d %.2d:%.2d:%.2d]", \
+#define Debug(...)                                                          \
+  do {                                                                      \
+    time_t t;                                                               \
+    struct tm* tm_info;                                                     \
+    time(&t);                                                               \
+    tm_info = localtime(&t);                                                \
+    fprintf(stderr, "[%.4d-%.2d-%.2d %.2d:%.2d:%.2d]",                      \
             1900 + tm_info->tm_year, 1 + tm_info->tm_mon, tm_info->tm_mday, \
-            tm_info->tm_hour, tm_info->tm_min, tm_info->tm_sec);\
-    fprintf(stderr, "[Debug]");\
-    fprintf(stderr, __VA_ARGS__);\
-    fflush(stderr); \
+            tm_info->tm_hour, tm_info->tm_min, tm_info->tm_sec);            \
+    fprintf(stderr, "[Debug]");                                             \
+    fprintf(stderr, __VA_ARGS__);                                           \
+    fflush(stderr);                                                         \
   } while (0)
 #endif
 
-#define Log(...) do {\
-    time_t t;\
-    struct tm* tm_info;\
-    time(&t);\
-    tm_info = localtime(&t);\
-    fprintf(stderr, "[%.4d-%.2d-%.2d %.2d:%.2d:%.2d]", \
+#define Log(...)                                                            \
+  do {                                                                      \
+    time_t t;                                                               \
+    struct tm* tm_info;                                                     \
+    time(&t);                                                               \
+    tm_info = localtime(&t);                                                \
+    fprintf(stderr, "[%.4d-%.2d-%.2d %.2d:%.2d:%.2d]",                      \
             1900 + tm_info->tm_year, 1 + tm_info->tm_mon, tm_info->tm_mday, \
-            tm_info->tm_hour, tm_info->tm_min, tm_info->tm_sec);\
-    fprintf(stderr, "[Log]");\
-    fprintf(stderr, __VA_ARGS__);\
-    fflush(stderr); \
+            tm_info->tm_hour, tm_info->tm_min, tm_info->tm_sec);            \
+    fprintf(stderr, "[Log]");                                               \
+    fprintf(stderr, __VA_ARGS__);                                           \
+    fflush(stderr);                                                         \
   } while (0)
 
-#define Error(...) do {\
-    time_t t;\
-    struct tm* tm_info;\
-    time(&t);\
-    tm_info = localtime(&t);\
-    fprintf(stderr, "[%.4d-%.2d-%.2d %.2d:%.2d:%.2d]", \
+#define Error(...)                                                          \
+  do {                                                                      \
+    time_t t;                                                               \
+    struct tm* tm_info;                                                     \
+    time(&t);                                                               \
+    tm_info = localtime(&t);                                                \
+    fprintf(stderr, "[%.4d-%.2d-%.2d %.2d:%.2d:%.2d]",                      \
             1900 + tm_info->tm_year, 1 + tm_info->tm_mon, tm_info->tm_mday, \
-            tm_info->tm_hour, tm_info->tm_min, tm_info->tm_sec);\
-    fprintf(stderr, "[Error]");\
-    fprintf(stderr, __VA_ARGS__);\
-    fflush(stderr); \
+            tm_info->tm_hour, tm_info->tm_min, tm_info->tm_sec);            \
+    fprintf(stderr, "[Error]");                                             \
+    fprintf(stderr, __VA_ARGS__);                                           \
+    fflush(stderr);                                                         \
   } while (0)
 
-#define MISSING_ARG(argc, argv, i) \
-  Error("\"%s\" wants a value.\n", argv[i])
+#define MISSING_ARG(argc, argv, i) Error("\"%s\" wants a value.\n", argv[i])
 
-#define COMSUME_1_ARG(argc, argv, i) \
-  do {\
-    for (int j = i; j < argc - 1; j++) {\
-      argv[j] = argv[j + 1];\
-    }\
-    argc -= 1;\
+#define COMSUME_1_ARG(argc, argv, i)     \
+  do {                                   \
+    for (int j = i; j < argc - 1; j++) { \
+      argv[j] = argv[j + 1];             \
+    }                                    \
+    argc -= 1;                           \
   } while (0)
 
-#define COMSUME_2_ARG(argc, argv, i) \
-  do {\
-    for (int j = i; j < argc - 2; j++) {\
-      argv[j] = argv[j + 2];\
-    }\
-    argc -= 2;\
+#define COMSUME_2_ARG(argc, argv, i)     \
+  do {                                   \
+    for (int j = i; j < argc - 2; j++) { \
+      argv[j] = argv[j + 2];             \
+    }                                    \
+    argc -= 2;                           \
   } while (0)
 
-#define CHECK_MISSING_ARG(argc, argv, i, action) do \
-  { \
-    if (i + 1 == argc) { \
-      MISSING_ARG(argc, argv, i); \
-      action; \
-    } \
-  } \
-  while (0)
+#define CHECK_MISSING_ARG(argc, argv, i, action) \
+  do {                                           \
+    if (i + 1 == argc) {                         \
+      MISSING_ARG(argc, argv, i);                \
+      action;                                    \
+    }                                            \
+  } while (0)
 
 #define DELIMITER " \t|\n"
 
-inline double sigmoid(double x) {
-  return 1.0 / (1.0 + exp(-x));
-}
+inline double sigmoid(double x) { return 1.0 / (1.0 + exp(-x)); }
 
 inline FILE* yfopen(const char* filename, const char* mode) {
   FILE* fp = fopen(filename, mode);
@@ -122,8 +121,8 @@ inline FILE* xfopen(const char* filename, const char* mode) {
 inline void xfwrite(const void* buffer, size_t size, size_t count, FILE* fp) {
   size_t r = fwrite(buffer, size, count, fp);
   if (r != count) {
-    Error("Failed to fwrite %d items, actually %d items.\n",
-          (int)count, (int)r);
+    Error("Failed to fwrite %d items, actually %d items.\n", (int)count,
+          (int)r);
     exit(101);
   }
 }
@@ -131,8 +130,8 @@ inline void xfwrite(const void* buffer, size_t size, size_t count, FILE* fp) {
 inline void xfread(void* buffer, size_t size, size_t count, FILE* fp) {
   size_t r = fread(buffer, size, count, fp);
   if (r != count) {
-    Error("Failed to fread %d items, actually %d items.\n",
-          (int)(count), (int)r);
+    Error("Failed to fread %d items, actually %d items.\n", (int)(count),
+          (int)r);
     exit(102);
   }
 }
@@ -210,9 +209,7 @@ class ScopedFile {
     }
   }
 
-  ~ScopedFile() {
-    Close();
-  }
+  ~ScopedFile() { Close(); }
 
   void Close() {
     if (px_ == stdin || px_ == stdout || px_ == stderr) {
@@ -226,12 +223,8 @@ class ScopedFile {
     }
   }
 
-  operator FILE* () {
-    return px_;
-  }
-  operator const FILE* () const {
-    return px_;
-  }
+  operator FILE*() { return px_; }
+  operator const FILE*() const { return px_; }
 };
 
 #endif  // SRC_LDA_X_H_
