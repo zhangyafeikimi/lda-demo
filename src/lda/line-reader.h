@@ -4,8 +4,8 @@
 // line reader
 //
 
-#ifndef SRC_COMMON_LINE_READER_H_
-#define SRC_COMMON_LINE_READER_H_
+#ifndef SRC_LDA_LINE_READER_H_
+#define SRC_LDA_LINE_READER_H_
 
 #include "lda/x.h"
 
@@ -42,4 +42,4 @@ struct LineReader {
   }
 };
 
-#endif  // SRC_COMMON_LINE_READER_H_
+#endif  // SRC_LDA_LINE_READER_H_

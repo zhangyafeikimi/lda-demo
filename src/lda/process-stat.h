@@ -4,8 +4,8 @@
 // process stat tools
 //
 
-#ifndef SRC_COMMON_PROCESS_STAT_H_
-#define SRC_COMMON_PROCESS_STAT_H_
+#ifndef SRC_LDA_PROCESS_STAT_H_
+#define SRC_LDA_PROCESS_STAT_H_
 
 #include <stdint.h>
 
@@ -22,4 +22,4 @@ int GetCPUUsage();
  */
 int GetMemoryUsage(uint64_t* mem, uint64_t* vmem);
 
-#endif  // SRC_COMMON_PROCESS_STAT_H_
+#endif  // SRC_LDA_PROCESS_STAT_H_

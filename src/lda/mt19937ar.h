@@ -43,8 +43,8 @@
    email: m-mat @ math.sci.hiroshima-u.ac.jp (remove space)
 */
 
-#ifndef SRC_COMMON_MT19937AR_H_
-#define SRC_COMMON_MT19937AR_H_
+#ifndef SRC_LDA_MT19937AR_H_
+#define SRC_LDA_MT19937AR_H_
 
 #if defined __cplusplus
 # define EXTERN extern "C"
@@ -80,4 +80,4 @@ EXTERN double genrand_real3(void);
 /* generates a random number on [0,1) with 53-bit resolution*/
 EXTERN double genrand_res53(void);
 
-#endif  // SRC_COMMON_MT19937AR_H_
+#endif

@@ -53,8 +53,8 @@
    email: m-mat @ math.sci.hiroshima-u.ac.jp (remove spaces)
 */
 
-#ifndef SRC_COMMON_MT64_H_
-#define SRC_COMMON_MT64_H_
+#ifndef SRC_LDA_MT64_H_
+#define SRC_LDA_MT64_H_
 
 #if defined __cplusplus
 # define EXTERN extern "C"
@@ -87,4 +87,4 @@ EXTERN double genrand64_real2(void);
 /* generates a random number on (0,1)-real-interval */
 EXTERN double genrand64_real3(void);
 
-#endif  // SRC_COMMON_MT64_H_
+#endif
