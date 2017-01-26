@@ -1,0 +1,9 @@
+*.pyc
+*-llh
+*-stat
+*-doc-topic-prob
+*-topic-word-prob
+*-topic-count
+*-word-topic-count
+*-alpha
+*-beta
