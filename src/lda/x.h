@@ -1,4 +1,4 @@
-// Copyright (c) 2015 Tencent Inc.
+// Copyright (c) 2015-2017 Contibutors.
 // Author: Yafei Zhang (zhangyafeikimi@gmail.com)
 //
 // common utils
