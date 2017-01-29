@@ -8,7 +8,7 @@
 #include "lda/sampler.h"
 #include "lda/x.h"
 
-#define TEST_DATA_DIR "../src/lda-test-data"
+#define TEST_DATA_DIR "src/lda/lda-test-data"
 
 void TestAlias() {
   std::vector<double> prob;
