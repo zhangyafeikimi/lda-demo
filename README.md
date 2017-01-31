@@ -1,5 +1,5 @@
 # lda-demo
-A LDA demo for various inference algorithm:
+A LDA demo for various inference algorithms:
 
 - Vanilla Gibbs sampling LDA
 - SparseLDA
