@@ -1,36 +1,18 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 2012
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "lda-test", "lda-test.vcxproj", "{B143DFF0-1BCB-4341-AC52-37879049508E}"
-	ProjectSection(ProjectDependencies) = postProject
-		{06A0D531-E2F7-42BB-AF9D-102C82448A3A} = {06A0D531-E2F7-42BB-AF9D-102C82448A3A}
-	EndProjectSection
-EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "lda-train", "lda-train.vcxproj", "{DA4EDABA-601C-47C2-916D-4203D899F57F}"
-	ProjectSection(ProjectDependencies) = postProject
-		{06A0D531-E2F7-42BB-AF9D-102C82448A3A} = {06A0D531-E2F7-42BB-AF9D-102C82448A3A}
-	EndProjectSection
-EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "lda-demo", "lda-demo.vcxproj", "{06A0D531-E2F7-42BB-AF9D-102C82448A3A}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
-		Debug|Win32 = Debug|Win32
-		Release|Win32 = Release|Win32
+		Debug|x64 = Debug|x64
+		Release|x64 = Release|x64
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{B143DFF0-1BCB-4341-AC52-37879049508E}.Debug|Win32.ActiveCfg = Debug|Win32
-		{B143DFF0-1BCB-4341-AC52-37879049508E}.Debug|Win32.Build.0 = Debug|Win32
-		{B143DFF0-1BCB-4341-AC52-37879049508E}.Release|Win32.ActiveCfg = Release|Win32
-		{B143DFF0-1BCB-4341-AC52-37879049508E}.Release|Win32.Build.0 = Release|Win32
-		{DA4EDABA-601C-47C2-916D-4203D899F57F}.Debug|Win32.ActiveCfg = Debug|Win32
-		{DA4EDABA-601C-47C2-916D-4203D899F57F}.Debug|Win32.Build.0 = Debug|Win32
-		{DA4EDABA-601C-47C2-916D-4203D899F57F}.Release|Win32.ActiveCfg = Release|Win32
-		{DA4EDABA-601C-47C2-916D-4203D899F57F}.Release|Win32.Build.0 = Release|Win32
-		{06A0D531-E2F7-42BB-AF9D-102C82448A3A}.Debug|Win32.ActiveCfg = Debug|Win32
-		{06A0D531-E2F7-42BB-AF9D-102C82448A3A}.Debug|Win32.Build.0 = Debug|Win32
-		{06A0D531-E2F7-42BB-AF9D-102C82448A3A}.Release|Win32.ActiveCfg = Release|Win32
-		{06A0D531-E2F7-42BB-AF9D-102C82448A3A}.Release|Win32.Build.0 = Release|Win32
+		{DA4EDABA-601C-47C2-916D-4203D899F57F}.Debug|x64.ActiveCfg = Debug|x64
+		{DA4EDABA-601C-47C2-916D-4203D899F57F}.Debug|x64.Build.0 = Debug|x64
+		{DA4EDABA-601C-47C2-916D-4203D899F57F}.Release|x64.ActiveCfg = Release|x64
+		{DA4EDABA-601C-47C2-916D-4203D899F57F}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
