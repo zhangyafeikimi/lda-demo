@@ -45,7 +45,7 @@ static inline int SampleCDF(const std::vector<double>& cdf, Random* gen) {
 /* SamplerBase */
 /************************************************************************/
 int SamplerBase::LoadModel(const std::string& prefix) {
-  Log("Loading model.\n");
+  INFO("Loading model.\n");
   if (LoadMVK(prefix + "-stat") != 0) {
     return -1;
   }
@@ -61,18 +61,18 @@ int SamplerBase::LoadModel(const std::string& prefix) {
   if (LoadWordsTopicsCount(prefix + "-word-topic-count") != 0) {
     return -5;
   }
-  Log("Done.\n");
+  INFO("Done.\n");
   return 0;
 }
 
 void SamplerBase::SaveModel(const std::string& prefix) const {
-  Log("Saving model.\n");
+  INFO("Saving model.\n");
   SaveMVK(prefix + "-stat");
   SaveTopicsCount(prefix + "-topic-count");
   SaveWordsTopicsCount(prefix + "-word-topic-count");
   SaveHPAlpha(prefix + "-alpha");
   SaveHPBeta(prefix + "-beta");
-  Log("Done.\n");
+  INFO("Done.\n");
 }
 
 int SamplerBase::InitializeSampler() {
@@ -159,7 +159,7 @@ int SamplerBase::Train() {
   time_t begin, end;
   time(&begin);
 
-  Log("Training.\n");
+  INFO("Training.\n");
 
   if (InitializeSampler() != 0) {
     return -1;
@@ -169,28 +169,28 @@ int SamplerBase::Train() {
     time_t iter_begin, iter_end;
 
     time(&iter_begin);
-    Log("Iteration %d started.\n", iteration_);
+    INFO("Iteration %d started.\n", iteration_);
     PreSampleCorpus();
     SampleCorpus();
     PostSampleCorpus();
     time(&iter_end);
 
-    Log("Iteration %d ended, cost %d seconds.\n", iteration_,
+    INFO("Iteration %d ended, cost %d seconds.\n", iteration_,
         (int)(iter_end - iter_begin));
 
     if (iteration_ > burnin_iteration_ &&
         iteration_ % log_likelihood_interval_ == 0) {
       time(&iter_begin);
-      Log("Calculating LogLikelihood.\n");
+      INFO("Calculating LogLikelihood.\n");
       const double llh = LogLikelihood();
       time(&iter_end);
-      Log("LogLikelihood(total/word)=%lg/%lg, cost %d seconds.\n", llh,
+      INFO("LogLikelihood(total/word)=%lg/%lg, cost %d seconds.\n", llh,
           llh / words_.size(), (int)(iter_end - iter_begin));
     }
   }
 
   time(&end);
-  Log("Training completed, cost %d seconds.\n", (int)(end - begin));
+  INFO("Training completed, cost %d seconds.\n", (int)(end - begin));
   return 0;
 }
 
@@ -219,7 +219,6 @@ void SamplerBase::SampleDocument(int m) {
 
 void SamplerBase::SampleDocument(Word* word, int doc_length,
                                  HashTable* doc_topics_count) {
-  Error("SampleDocument is not implemented.\n");
 }
 
 void SamplerBase::HPOpt_Initialize() {
@@ -227,7 +226,7 @@ void SamplerBase::HPOpt_Initialize() {
     return;
   }
 
-  Log("Hyper optimization will be carried out in this iteration.\n");
+  INFO("Hyper optimization will be carried out in this iteration.");
   docs_topic_count_hist_.clear();
   docs_topic_count_hist_.resize(K_);
   doc_len_hist_.clear();
@@ -241,11 +240,11 @@ void SamplerBase::HPOpt_Optimize() {
   }
 
   if (hp_opt_alpha_iteration_ > 0) {
-    Log("Hyper optimizing alpha.\n");
+    INFO("Hyper optimizing alpha.\n");
     HPOpt_OptimizeAlpha();
   }
   if (hp_opt_beta_iteration_ > 0) {
-    Log("Hyper optimizing beta.\n");
+    INFO("Hyper optimizing beta.\n");
     HPOpt_PrepareOptimizeBeta();
     HPOpt_OptimizeBeta();
   }

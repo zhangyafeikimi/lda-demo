@@ -11,6 +11,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\src\corpus.cc" />
     <ClCompile Include="..\src\lda-train.cc" />
     <ClCompile Include="..\src\model.cc" />
     <ClCompile Include="..\src\rand.cc" />
@@ -18,6 +19,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\src\alias.h" />
+    <ClInclude Include="..\src\corpus.h" />
     <ClInclude Include="..\src\model.h" />
     <ClInclude Include="..\src\rand.h" />
     <ClInclude Include="..\src\sampler.h" />

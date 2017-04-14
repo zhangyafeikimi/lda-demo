@@ -16,6 +16,7 @@ else
 endif
 
 OBJECT=\
+src/corpus.o \
 src/lda-train.o \
 src/model.o \
 src/rand.o \

@@ -1,7 +1,7 @@
 // Copyright (c) 2015-2017 Contibutors.
 // Author: Yafei Zhang (zhangyafeikimi@gmail.com)
 //
-// LDA model including documents and words
+// LDA model including corpus and counts
 //
 
 #ifndef MODEL_H_
@@ -9,26 +9,11 @@
 
 #include <string>
 #include <vector>
+#include "corpus.h"
 #include "table.h"
 
-struct Doc {
-  int index;  // index in "SamplerBase::words_"
-  int N;      // # of words
-};
-
-struct Word {
-  int v;  // word id in vocabulary, starts from 0
-  int k;  // topic id assign to this word, starts from 0
-};
-
-class Model {
+class Model : public Corpus {
  protected:
-  // corpus
-  std::vector<Doc> docs_;
-  std::vector<Word> words_;
-  int M_;  // # of docs
-  int V_;  // # of vocabulary
-
   // model parameters
   int K_;  // # of topics
   // topics_count_[k]: # of words assigned to topic k
@@ -74,10 +59,7 @@ class Model {
 
  public:
   Model()
-      : 
-        M_(0),
-        V_(0),
-        K_(0),
+      : K_(0),
         hp_sum_alpha_(0.0),
         hp_beta_(0.0),
         hp_opt_(0),
@@ -92,9 +74,6 @@ class Model {
         iteration_(0) {}
   virtual ~Model() {}
 
-  // getters & setters
-  int M() { return M_; }
-  int V() { return V_; }
   int& K() { return K_; }
   double& alpha() { return hp_sum_alpha_; }
   double& beta() { return hp_beta_; }
@@ -107,9 +86,6 @@ class Model {
   int& total_iteration() { return total_iteration_; }
   int& burnin_iteration() { return burnin_iteration_; }
   int& log_likelihood_interval() { return log_likelihood_interval_; }
-  // end of getters & setters
-
-  bool LoadCorpus(const std::string& filename, int with_id);
 
   bool LoadMVK(const std::string& filename);
   bool LoadTopicsCount(const std::string& filename);

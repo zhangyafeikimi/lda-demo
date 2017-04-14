@@ -204,7 +204,7 @@ int main(int argc, char** argv) {
 #define CHECK_EXIT(condition)               \
   do {                                      \
     if (!(condition)) {                     \
-      Error("Must have: %s\n", #condition); \
+      ERROR("Must have: %s", #condition); \
       exit(1);                              \
     }                                       \
   } while (0)
@@ -237,7 +237,7 @@ int main(int argc, char** argv) {
     output_prefix = input_corpus_filename;
   }
 
-  SamplerBase* p = NULL;
+  SamplerBase* p = nullptr;
   if (sampler == "lda") {
     p = new GibbsSampler();
   } else if (sampler == "sparselda") {
@@ -267,7 +267,7 @@ int main(int argc, char** argv) {
   p->burnin_iteration() = burnin_iteration;
   p->log_likelihood_interval() = log_likelihood_interval;
 
-  { p->LoadCorpus(input_corpus_filename, doc_with_id); }
+  CHECK(p->LoadCorpus(input_corpus_filename, doc_with_id != 0));
   p->Train();
   p->SaveModel(output_prefix);
   delete p;
