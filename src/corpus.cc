@@ -24,9 +24,8 @@ bool Corpus::LoadCorpus(const std::string& filename, bool doc_with_id) {
   char* word_id;
   char* word_count;
   char* word_begin;
-  Doc doc;
   Word word;
-  int id, i, count;
+  int n, index, id, i, count;
   std::string line;
 
   INFO("Loading corpus from \"%s\".", filename.c_str());
@@ -34,8 +33,8 @@ bool Corpus::LoadCorpus(const std::string& filename, bool doc_with_id) {
 
   while (std::getline(ifs, line)) {
     line_no++;
-    doc.index = static_cast<int>(words_.size());
-    doc.N = 0;
+    index = static_cast<int>(words_.size());
+    n = 0;
 
     if (doc_with_id) {
       doc_id = strtok(&line[0], " \t|\n");
@@ -87,16 +86,22 @@ bool Corpus::LoadCorpus(const std::string& filename, bool doc_with_id) {
       word.v = id;
       for (i = 0; i < count; i++) {
         words_.push_back(word);
-        doc.N++;
+        ++n;
       }
     }
 
-    if (doc.N != 0) {
-      docs_.push_back(doc);
+    if (n != 0) {
+      docs_.push_back(index);
     }
   }
 
-  M_ = static_cast<int>(docs_.size());
+  // a sentinel
+  index = static_cast<int>(words_.size());
+  docs_.push_back(index);
+  docs_.shrink_to_fit();
+  words_.shrink_to_fit();
+
+  M_ = static_cast<int>(docs_.size()) - 1;
   if (M_ == 0) {
     ERROR("Loaded an empty corpus.");
     return false;

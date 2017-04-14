@@ -85,7 +85,7 @@ class SamplerBase : public Model<Tables> {
 template <class Tables>
 int SamplerBase<Tables>::InitializeSampler() {
   if (hp_sum_alpha_ <= 0.0) {
-    const double avg_doc_len = (double)words_.size() / docs_.size();
+    const double avg_doc_len = (double)words_.size() / M_;
     hp_alpha_.resize(K_, avg_doc_len / K_);
     hp_sum_alpha_ = avg_doc_len;
   } else {
@@ -123,10 +123,10 @@ int SamplerBase<Tables>::InitializeSampler() {
 
   // random initialize topics
   for (int m = 0; m < M_; m++) {
-    const Doc& doc = docs_[m];
-    Word* word = &words_[doc.index];
+    const int N = docs_[m + 1] - docs_[m];
+    Word* word = &words_[docs_[m]];
     auto& doc_topics_count = docs_topics_count_[m];
-    for (int n = 0; n < doc.N; n++, word++) {
+    for (int n = 0; n < N; n++, word++) {
       const int v = word->v;
       const int new_topic = random_.GetNext(K_);
       word->k = new_topic;
@@ -146,10 +146,10 @@ double SamplerBase<Tables>::LogLikelihood() const {
 #pragma omp parallel for schedule(static) reduction(+ : sum)
 #endif
   for (int m = 0; m < M_; m++) {
-    const Doc& doc = docs_[m];
-    const Word* word = &words_[doc.index];
+    const int N = docs_[m + 1] - docs_[m];
+    const Word* word = &words_[docs_[m]];
     const auto& doc_topics_count = docs_topics_count_[m];
-    for (int n = 0; n < doc.N; n++, word++) {
+    for (int n = 0; n < N; n++, word++) {
       const int v = word->v;
       double word_sum = 0.0;
       for (int k = 0; k < K_; k++) {
@@ -157,7 +157,7 @@ double SamplerBase<Tables>::LogLikelihood() const {
                         (topics_count_[k] + hp_sum_beta_);
         word_sum += (doc_topics_count[k] + hp_alpha_[k]) * phi_kv;
       }
-      word_sum /= (doc.N + hp_sum_alpha_);
+      word_sum /= (N + hp_sum_alpha_);
       sum += log(word_sum);
     }
   }
@@ -219,10 +219,10 @@ void SamplerBase<Tables>::PostSampleDocument(int m) {
 
 template <class Tables>
 void SamplerBase<Tables>::SampleDocument(int m) {
-  const Doc& doc = docs_[m];
-  Word* word = &words_[doc.index];
+  const int N = docs_[m + 1] - docs_[m];
+  Word* word = &words_[docs_[m]];
   auto& doc_topics_count = docs_topics_count_[m];
-  SampleDocument(word, doc.N, &doc_topics_count);
+  SampleDocument(word, N, &doc_topics_count);
 }
 
 template <class Tables>
@@ -350,7 +350,7 @@ void SamplerBase<Tables>::HPOpt_PostSampleDocument(int m) {
   }
 
   if (hp_opt_alpha_iteration_ > 0) {
-    const Doc& doc = docs_[m];
+    const int N = docs_[m + 1] - docs_[m];
     const auto& doc_topics_count = docs_topics_count_[m];
     for (int k = 0; k < K_; k++) {
       const int count = doc_topics_count[k];
@@ -364,11 +364,11 @@ void SamplerBase<Tables>::HPOpt_PostSampleDocument(int m) {
       docs_topic_k_count_hist[count]++;
     }
 
-    if (doc.N) {
-      if (static_cast<int>(doc_len_hist_.size()) <= doc.N) {
-        doc_len_hist_.resize(doc.N + 1);
+    if (N > 0) {
+      if (static_cast<int>(doc_len_hist_.size()) <= N) {
+        doc_len_hist_.resize(N + 1);
       }
-      doc_len_hist_[doc.N]++;
+      doc_len_hist_[N]++;
     }
   }
 }

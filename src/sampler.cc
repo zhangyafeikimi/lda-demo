@@ -123,10 +123,9 @@ void SparseLDASampler::PostSampleDocument(int m) {
 void SparseLDASampler::SampleDocument(int m) {
   PrepareDocBucket(m);
 
-  const Doc& doc = docs_[m];
-  Word* word = &words_[doc.index];
-
-  for (int n = 0; n < doc.N; n++, word++) {
+  const int N = docs_[m + 1] - docs_[m];
+  Word* word = &words_[docs_[m]];
+  for (int n = 0; n < N; n++, word++) {
     const int v = word->v;
     const int old_k = word->k;
     RemoveOrAddWordTopic(m, v, old_k, 1);

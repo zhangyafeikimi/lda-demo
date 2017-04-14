@@ -10,11 +10,6 @@
 #include <string>
 #include <vector>
 
-struct Doc {
-  int index;  // index in "Corpus::words_"
-  int N;      // # of words
-};
-
 struct Word {
   int v;  // word id in vocabulary, starts from 0
   int k;  // topic id assign to this word, starts from 0
@@ -22,7 +17,7 @@ struct Word {
 
 class Corpus {
  protected:
-  std::vector<Doc> docs_;
+  std::vector<int> docs_;  // doc starting indices in "words_"
   std::vector<Word> words_;
   int M_;  // # of docs
   int V_;  // # of vocabulary
