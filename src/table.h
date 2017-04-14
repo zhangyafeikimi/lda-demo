@@ -12,7 +12,6 @@
 #include <fstream>
 #include <sstream>
 #include <string>
-#include <thread>
 #include <vector>
 
 template <class T>
@@ -23,7 +22,7 @@ class DenseTableT {
 
   void Init(int hint_size) { storage_.resize(hint_size); }
   ElementType Inc(int id, ElementType count) { return storage_[id] += count; }
-  ElementType Dec(int id, ElementType count) { return storage_[id] += count; }
+  ElementType Dec(int id, ElementType count) { return storage_[id] -= count; }
   ElementType Count(int id) const { return storage_[id]; }
 
   int NextNonZeroCountIndex(int index) const {
