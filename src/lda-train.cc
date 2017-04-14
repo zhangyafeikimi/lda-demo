@@ -1,7 +1,7 @@
 // Copyright (c) 2015-2017 Contibutors.
 // Author: Yafei Zhang (zhangyafeikimi@gmail.com)
 //
-// lda train
+// LDA train main
 //
 
 #include <string>

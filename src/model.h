@@ -1,7 +1,7 @@
 // Copyright (c) 2015-2017 Contibutors.
 // Author: Yafei Zhang (zhangyafeikimi@gmail.com)
 //
-// document, word and model
+// LDA model including documents and words
 //
 
 #ifndef MODEL_H_
@@ -9,7 +9,6 @@
 
 #include <string>
 #include <vector>
-#include "array2d.h"
 #include "table.h"
 
 struct Doc {
@@ -26,20 +25,10 @@ int LoadTable(const std::string& filename, IntTable* table);
 void SaveTable(const std::string& filename, const IntTable& table);
 int LoadTables(const std::string& filename, IntTables* tables);
 void SaveTables(const std::string& filename, const IntTables& tables);
-int LoadArray2D(const std::string& filename, Array2D* a);
-void SaveArray2D(const std::string& filename, const Array2D& a);
-
-enum {
-  kSampleMode = 0,
-  kInferMode = 1,
-};
 
 class Model {
  protected:
-  int mode_;
-
   // corpus
-  std::vector<std::string> doc_ids_;
   std::vector<Doc> docs_;
   std::vector<Word> words_;
   int M_;  // # of docs
@@ -91,7 +80,7 @@ class Model {
 
  public:
   Model()
-      : mode_(kSampleMode),
+      : 
         M_(0),
         V_(0),
         K_(0),
@@ -129,9 +118,6 @@ class Model {
   // end of getters & setters
 
   int LoadCorpus(const std::string& filename, int with_id);
-
-  void CollectTheta(Array2D* theta) const;
-  void CollectPhi(Array2D* phi) const;
 
   int LoadMVK(const std::string& filename);
   int LoadTopicsCount(const std::string& filename);

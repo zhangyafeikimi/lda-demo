@@ -13,12 +13,11 @@
   <ItemGroup>
     <ClCompile Include="..\src\lda-train.cc" />
     <ClCompile Include="..\src\model.cc" />
+    <ClCompile Include="..\src\rand.cc" />
     <ClCompile Include="..\src\sampler.cc" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\src\alias.h" />
-    <ClInclude Include="..\src\array2d.h" />
-    <ClInclude Include="..\src\line-reader.h" />
     <ClInclude Include="..\src\model.h" />
     <ClInclude Include="..\src\rand.h" />
     <ClInclude Include="..\src\sampler.h" />

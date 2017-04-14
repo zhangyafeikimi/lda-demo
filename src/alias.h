@@ -63,15 +63,6 @@ class AliasBuilderT {
  public:
   AliasBuilderT() {}
 
-  void Build(AliasType* alias, std::vector<FloatType>* prob) {
-    FloatType prob_sum = 0;
-    const int size = static_cast<int>(prob->size());
-    for (int i = 0; i < size; ++i) {
-      prob_sum += (*prob)[i];
-    }
-    Build(alias, prob, prob_sum);
-  }
-
   void Build(AliasType* alias, std::vector<FloatType>* prob,
              FloatType prob_sum) {
     static const FloatType ONE = 1;

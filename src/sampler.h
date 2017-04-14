@@ -18,8 +18,7 @@
 /************************************************************************/
 class SamplerBase : public Model {
  protected:
-  Uniform01D uniform_01_;
-  UniformTopic uniform_topic_;
+  Random random_;
 
  public:
   virtual int LoadModel(const std::string& prefix);
@@ -51,16 +50,6 @@ class SamplerBase : public Model {
     }
     return false;
   }
-
- public:
-  virtual int InitializeInfer();
-  virtual void InferDocument(Word* word, int doc_length,
-                             IntTable* doc_topics_count);
-  virtual void InferDocument(Word* word, int doc_length, int* most_prob_topic);
-  virtual void InferDocument(int* word_ids, int doc_length,
-                             IntTable* doc_topics_count);
-  virtual void InferDocument(int* word_ids, int doc_length,
-                             int* most_prob_topic);
 };
 
 /************************************************************************/
@@ -73,7 +62,6 @@ class GibbsSampler : public SamplerBase {
  public:
   GibbsSampler() {}
   virtual int InitializeSampler();
-  virtual int InitializeInfer();
   virtual void SampleDocument(Word* word, int doc_length,
                               IntTable* doc_topics_count);
 };
@@ -128,7 +116,6 @@ class AliasLDASampler : public SamplerBase {
   // end of setters
 
   virtual int InitializeSampler();
-  virtual int InitializeInfer();
   virtual void SampleDocument(Word* word, int doc_length,
                               IntTable* doc_topics_count);
 };
@@ -161,7 +148,6 @@ class LightLDASampler : public SamplerBase {
   // end of setters
 
   virtual int InitializeSampler();
-  virtual int InitializeInfer();
   virtual void PostSampleCorpus();
   virtual void SampleDocument(Word* word, int doc_length,
                               IntTable* doc_topics_count);

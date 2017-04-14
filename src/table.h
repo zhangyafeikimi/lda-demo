@@ -1,7 +1,7 @@
 // Copyright (c) 2015-2017 Contibutors.
 // Author: Yafei Zhang (zhangyafeikimi@gmail.com)
 //
-// count table and tables
+// count tables
 //
 
 #ifndef TABLE_H_
@@ -9,13 +9,13 @@
 
 #include <assert.h>
 #include <algorithm>
+#include <fstream>
+#include <sstream>
 #include <vector>
 
 enum {
   kHashTable = 1,
   kSparseTable,
-  kDenseTable,
-  kArrayBufTable,
 };
 
 template <class T>
@@ -32,7 +32,7 @@ class ITable {
   virtual T Count(int id) const = 0;
   virtual int NextNonZeroCountIndex(int index) const = 0;
   virtual int Size() const = 0;
-  virtual int GetId(int index) const = 0;
+  virtual int GetID(int index) const = 0;
   virtual T GetCount(int index) const = 0;
 };
 
@@ -55,7 +55,6 @@ class DenseTable : public ITable<T> {
   virtual T Dec(int id, T count) {
     T& r = storage_[id];
     r -= count;
-    assert(r >= 0);
     return r;
   }
 
@@ -76,59 +75,10 @@ class DenseTable : public ITable<T> {
   }
 
   virtual int Size() const { return (int)storage_.size(); }
-
-  virtual int GetId(int index) const { return index; }
-
+  virtual int GetID(int index) const { return index; }
   virtual T GetCount(int index) const { return storage_[index]; }
-
   T& operator[](int id) { return storage_[id]; }
-
   T operator[](int id) const { return storage_[id]; }
-};
-
-template <class T>
-class ArrayBufTable : public ITable<T> {
- private:
-  T* storage_;
-  int size_;
-
- public:
-  ArrayBufTable(T* storage, int size) : storage_(storage), size_(size) {}
-
-  virtual T Inc(int id, T count) {
-    T& r = storage_[id];
-    r += count;
-    return r;
-  }
-
-  virtual T Dec(int id, T count) {
-    T& r = storage_[id];
-    r -= count;
-    assert(r >= 0);
-    return r;
-  }
-
-  virtual T Count(int id) const { return storage_[id]; }
-
-  virtual int NextNonZeroCountIndex(int index) const {
-    if (index >= size_) {
-      return size_;
-    }
-
-    while (storage_[index] == 0) {
-      index++;
-      if (index >= size_) {
-        return size_;
-      }
-    }
-    return index;
-  }
-
-  virtual int Size() const { return size_; }
-
-  virtual int GetId(int index) const { return index; }
-
-  virtual T GetCount(int index) const { return storage_[index]; }
 };
 
 template <class T>
@@ -198,7 +148,7 @@ class SparseTable : public ITable<T> {
 
   virtual int Size() const { return (int)storage_.size(); }
 
-  virtual int GetId(int index) const { return storage_[index].id; }
+  virtual int GetID(int index) const { return storage_[index].id; }
 
   virtual T GetCount(int index) const { return storage_[index].count; }
 };
@@ -376,7 +326,7 @@ class HashTable : public ITable<T> {
 
   virtual int Size() const { return (int)storage_.size(); }
 
-  virtual int GetId(int index) const {
+  virtual int GetID(int index) const {
     assert(storage_[index].flag == kUsed);
     return storage_[index].id;
   }
@@ -392,7 +342,6 @@ class Table {
  private:
   typedef ITable<T> ITableT;
   typedef DenseTable<T> DenseTableT;
-  typedef ArrayBufTable<T> ArrayBufTableT;
   typedef SparseTable<T> SparseTableT;
   typedef HashTable<T> HashTableT;
   ITableT* impl_;
@@ -420,10 +369,6 @@ class Table {
     impl_ = hist;
   }
 
-  void InitArrayBuf(T* storage, int size) {
-    impl_ = new ArrayBufTableT(storage, size);
-  }
-
   void InitSparse() { impl_ = new SparseTableT(); }
 
   void InitHash() { impl_ = new HashTableT(); }
@@ -438,7 +383,7 @@ class Table {
     const_iterator(const ITableT* impl, int index)
         : impl_(impl), index_(index) {}
 
-    int id() const { return impl_->GetId(index_); }
+    int id() const { return impl_->GetID(index_); }
 
     T count() const { return impl_->GetCount(index_); }
 
@@ -479,6 +424,35 @@ class Table {
 
   __Proxy operator[](int id) { return __Proxy(impl_, id); }
   T operator[](int id) const { return impl_->Count(id); }
+
+  void Save(const std::string& filename) const {
+    std::ofstream ofs(filename.c_str());
+    const_iterator first = begin();
+    const_iterator last = end();
+    for (; first != last; ++first) {
+      ofs << first.id() << '\t' << first.count() << std::endl;
+    }
+  }
+
+  int Load(const std::string& filename) {
+    int id;
+    T count;
+    std::string line;
+    std::ifstream ifs(filename.c_str());
+
+    while (std::getline(ifs, line)) {
+    }
+
+    for (;;) {
+      r = fscanf(fp, "%d\t%d\n", &id, &count);
+      if (r != 2) {
+        break;
+      }
+      // table is empty
+      (*table)[id] += count;
+    }
+    return 0;
+  }
 };
 
 template <class T>
@@ -517,17 +491,6 @@ class Tables {
       case kSparseTable:
         for (int i = 0; i < d1_; i++) {
           matrix_[i].InitSparse();
-        }
-        break;
-      case kDenseTable:
-        for (int i = 0; i < d1_; i++) {
-          matrix_[i].InitDense(d2_);
-        }
-        break;
-      case kArrayBufTable:
-        array_buf_.resize(d1_ * d2_);
-        for (int i = 0; i < d1_; i++) {
-          matrix_[i].InitArrayBuf(&array_buf_[0] + i * d2_, d2_);
         }
         break;
     }

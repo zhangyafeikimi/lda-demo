@@ -5,7 +5,6 @@
 #include "model.h"
 #include <fstream>
 #include <string>
-#include "line-reader.h"
 #include "x.h"
 
 int LoadTable(const std::string& filename, IntTable* table) {
@@ -60,39 +59,7 @@ void SaveTables(const std::string& filename, const IntTables& tables) {
   }
 }
 
-int LoadArray2D(const std::string& filename, Array2D* a) {
-  ScopedFile fp(filename.c_str(), ScopedFile::Read);
-  const int d1 = a->d1();
-  const int d2 = a->d2();
-  int r;
-  for (int i = 0; i < d1; i++) {
-    r = 0;
-    for (int j = 0; j < d2 - 1; j++) {
-      r += fscanf(fp, "%lg ", &(*a)[i][j]);
-    }
-    r += fscanf(fp, "%lg\n", &(*a)[i][d2 - 1]);
-    if (r != d2) {
-      Error("Loading \"%s\" failed\n", filename.c_str());
-      return -1;
-    }
-  }
-  return 0;
-}
-
-void SaveArray2D(const std::string& filename, const Array2D& a) {
-  ScopedFile fp(filename.c_str(), ScopedFile::Write);
-  const int d1 = a.d1();
-  const int d2 = a.d2();
-  for (int i = 0; i < d1; i++) {
-    for (int j = 0; j < d2 - 1; j++) {
-      fprintf(fp, "%lg ", a[i][j]);
-    }
-    fprintf(fp, "%lg\n", a[i][d2 - 1]);
-  }
-}
-
 int Model::LoadCorpus(const std::string& filename, int with_id) {
-  LineReader line_reader;
   int line_no = 0;
   char* endptr;
   char* doc_id = NULL;
@@ -102,25 +69,28 @@ int Model::LoadCorpus(const std::string& filename, int with_id) {
   Doc doc;
   Word word;
   int id, i, count;
-  ScopedFile fp(filename.c_str(), ScopedFile::Read);
+  std::string line;
+  std::ifstream ifs(filename.c_str());
+  // ScopedFile fp(filename.c_str(), ScopedFile::Read);
 
   Log("Loading corpus.\n");
   V_ = 0;
-  while (line_reader.ReadLine(fp) != NULL) {
+
+  while (std::getline(ifs, line)) {
     line_no++;
 
     doc.index = (int)words_.size();
     doc.N = 0;
 
     if (with_id) {
-      doc_id = strtok(line_reader.buf, DELIMITER);
+      doc_id = strtok(&line[0], DELIMITER);
       if (doc_id == NULL) {
         Error("line %d, empty line.\n", line_no);
         continue;
       }
       word_begin = NULL;
     } else {
-      word_begin = line_reader.buf;
+      word_begin = &line[0];
     }
 
     for (;;) {
@@ -168,9 +138,6 @@ int Model::LoadCorpus(const std::string& filename, int with_id) {
     }
 
     if (doc.N) {
-      if (with_id) {
-        doc_ids_.push_back(doc_id);
-      }
       docs_.push_back(doc);
     }
   }
@@ -188,31 +155,6 @@ int Model::LoadCorpus(const std::string& filename, int with_id) {
 
   Log("Loaded %d documents with a %d-size vocabulary.\n", M_, V_);
   return 0;
-}
-
-void Model::CollectTheta(Array2D* theta) const {
-  theta->Init(M_, K_);
-  for (int m = 0; m < M_; m++) {
-    const Doc& doc = docs_[m];
-    const IntTable& doc_topics_count = docs_topics_count_[m];
-    double* theta_m = (*theta)[m];
-    for (int k = 0; k < K_; k++) {
-      theta_m[k] =
-          (doc_topics_count[k] + hp_alpha_[k]) / (doc.N + hp_sum_alpha_);
-    }
-  }
-}
-
-void Model::CollectPhi(Array2D* phi) const {
-  phi->Init(K_, V_);
-  for (int k = 0; k < K_; k++) {
-    const int topics_count_k = topics_count_[k];
-    double* phi_k = (*phi)[k];
-    for (int v = 0; v < V_; v++) {
-      phi_k[v] = (words_topics_count_[v][k] + hp_beta_) /
-                 (topics_count_k + hp_sum_beta_);
-    }
-  }
 }
 
 int Model::LoadMVK(const std::string& filename) {

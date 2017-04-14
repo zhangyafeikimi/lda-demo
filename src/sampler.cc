@@ -37,7 +37,7 @@ static int SampleCDF(const std::vector<double>& cdf, double u) {
   }
 }
 
-static inline int SampleCDF(const std::vector<double>& cdf, Uniform01D* gen) {
+static inline int SampleCDF(const std::vector<double>& cdf, Random* gen) {
   return SampleCDF(cdf, gen->GetNext());
 }
 
@@ -68,16 +68,6 @@ int SamplerBase::LoadModel(const std::string& prefix) {
 void SamplerBase::SaveModel(const std::string& prefix) const {
   Log("Saving model.\n");
   SaveMVK(prefix + "-stat");
-  {
-    Array2D theta;
-    CollectTheta(&theta);  // TODO(kimi): OOM
-    SaveArray2D(prefix + "-doc-topic-prob", theta);
-  }
-  {
-    Array2D phi;
-    CollectPhi(&phi);
-    SaveArray2D(prefix + "-topic-word-prob", phi);
-  }
   SaveTopicsCount(prefix + "-topic-count");
   SaveWordsTopicsCount(prefix + "-word-topic-count");
   SaveHPAlpha(prefix + "-alpha");
@@ -86,8 +76,6 @@ void SamplerBase::SaveModel(const std::string& prefix) const {
 }
 
 int SamplerBase::InitializeSampler() {
-  mode_ = kSampleMode;
-
   if (hp_sum_alpha_ <= 0.0) {
     const double avg_doc_len = (double)words_.size() / docs_.size();
     hp_alpha_.resize(K_, avg_doc_len / K_);
@@ -132,7 +120,7 @@ int SamplerBase::InitializeSampler() {
     IntTable& doc_topics_count = docs_topics_count_[m];
     for (int n = 0; n < doc.N; n++, word++) {
       const int v = word->v;
-      const int new_topic = uniform_topic_.GetNext(K_);
+      const int new_topic = random_.GetNext(K_);
       word->k = new_topic;
       ++topics_count_[new_topic];
       ++doc_topics_count[new_topic];
@@ -145,11 +133,6 @@ int SamplerBase::InitializeSampler() {
 
 double SamplerBase::LogLikelihood() const {
   double sum = 0.0;
-  Array2D phi;
-
-  phi.Init(K_, V_);
-  CollectPhi(&phi);
-
 #if defined _OPENMP
 #pragma omp parallel for schedule(static) reduction(+ : sum)
 #endif
@@ -161,7 +144,9 @@ double SamplerBase::LogLikelihood() const {
       const int v = word->v;
       double word_sum = 0.0;
       for (int k = 0; k < K_; k++) {
-        word_sum += (doc_topics_count[k] + hp_alpha_[k]) * phi[k][v];
+        double phi_kv = (words_topics_count_[v][k] + hp_beta_) /
+          (topics_count_[k] + hp_sum_beta_);
+        word_sum += (doc_topics_count[k] + hp_alpha_[k]) * phi_kv;
       }
       word_sum /= (doc.N + hp_sum_alpha_);
       sum += log(word_sum);
@@ -371,91 +356,11 @@ void SamplerBase::HPOpt_PostSampleDocument(int m) {
   }
 }
 
-int SamplerBase::InitializeInfer() {
-  if (K_ == 0) {
-    Error("Please load a valid model by \"LoadModel\".\n");
-    return -1;
-  }
-
-  mode_ = kInferMode;
-
-  if (total_iteration_ == 0) {
-    total_iteration_ = 20;
-  }
-
-  return 0;
-}
-
-void SamplerBase::InferDocument(Word* word, int doc_length,
-                                IntTable* doc_topics_count) {
-  for (int i = 0; i < doc_length; i++) {
-    Word& w = word[i];
-    w.k = uniform_topic_.GetNext(K_);
-    ++(*doc_topics_count)[w.k];
-  }
-
-  for (int i = 1; i <= total_iteration_; i++) {
-    SampleDocument(word, doc_length, doc_topics_count);
-  }
-}
-
-void SamplerBase::InferDocument(Word* word, int doc_length,
-                                int* most_prob_topic) {
-  IntTable doc_topics_count;
-  doc_topics_count.InitHash();
-
-  InferDocument(word, doc_length, &doc_topics_count);
-
-  IntTable::const_iterator first = doc_topics_count.begin();
-  IntTable::const_iterator last = doc_topics_count.end();
-  int max_k = -1;
-  int max_count = 0;
-  for (; first != last; ++first) {
-    const int count = first.count();
-    if (max_count < count) {
-      max_count = count;
-      max_k = first.id();
-    }
-  }
-  *most_prob_topic = max_k;
-}
-
-void SamplerBase::InferDocument(int* word_ids, int doc_length,
-                                IntTable* doc_topics_count) {
-  std::vector<Word> doc;
-  for (int i = 0; i < doc_length; i++) {
-    Word word;
-    word.v = word_ids[i];
-    doc.push_back(word);
-  }
-  InferDocument(&doc[0], doc_length, doc_topics_count);
-}
-
-void SamplerBase::InferDocument(int* word_ids, int doc_length,
-                                int* most_prob_topic) {
-  std::vector<Word> doc;
-  for (int i = 0; i < doc_length; i++) {
-    Word word;
-    word.v = word_ids[i];
-    doc.push_back(word);
-  }
-  InferDocument(&doc[0], doc_length, most_prob_topic);
-}
-
 /************************************************************************/
 /* GibbsSampler */
 /************************************************************************/
 int GibbsSampler::InitializeSampler() {
   if (SamplerBase::InitializeSampler() != 0) {
-    return -1;
-  }
-
-  word_topic_cdf_.resize(K_);
-  return 0;
-}
-
-int GibbsSampler::InitializeInfer() {
-  if (SamplerBase::InitializeInfer() != 0) {
     return -1;
   }
 
@@ -471,10 +376,8 @@ void GibbsSampler::SampleDocument(Word* word, int doc_length,
     IntTable& word_topics_count = words_topics_count_[v];
     int k, new_k;
 
-    if (mode_ == kSampleMode) {
       --topics_count_[old_k];
       --word_topics_count[old_k];
-    }
     --(*doc_topics_count)[old_k];
 
     word_topic_cdf_[0] = 0.0;
@@ -488,11 +391,9 @@ void GibbsSampler::SampleDocument(Word* word, int doc_length,
                           (topics_count_[k] + hp_sum_beta_) *
                           ((*doc_topics_count)[k] + hp_alpha_[k]);
 
-    new_k = SampleCDF(word_topic_cdf_, &uniform_01_);
-    if (mode_ == kSampleMode) {
+    new_k = SampleCDF(word_topic_cdf_, &random_);
       ++topics_count_[new_k];
       ++word_topics_count[new_k];
-    }
     ++(*doc_topics_count)[new_k];
     word->k = new_k;
   }
@@ -582,7 +483,7 @@ void SparseLDASampler::RemoveOrAddWordTopic(int m, int v, int k, int remove) {
 
 int SparseLDASampler::SampleDocumentWord(int m, int v) {
   const double sum = smooth_sum_ + doc_sum_ + word_sum_;
-  double sample = uniform_01_.GetNext() * sum;
+  double sample = random_.GetNext() * sum;
   int new_k = -1;
 
   if (sample < word_sum_) {
@@ -686,21 +587,6 @@ int AliasLDASampler::InitializeSampler() {
   return 0;
 }
 
-int AliasLDASampler::InitializeInfer() {
-  if (SamplerBase::InitializeInfer() != 0) {
-    return -1;
-  }
-
-  p_pdf_.resize(K_);
-  q_sums_.resize(V_);
-  q_samples_.resize(V_);
-  q_pdf_.resize(K_);
-  if (mh_step_ == 0) {
-    mh_step_ = 8;
-  }
-  return 0;
-}
-
 void AliasLDASampler::SampleDocument(Word* word, int doc_length,
                                      IntTable* doc_topics_count) {
   int s, t;
@@ -725,21 +611,12 @@ void AliasLDASampler::SampleDocument(Word* word, int doc_length,
     const int old_k = word->k;
     s = old_k;
 
-    if (mode_ == kSampleMode) {
       N_s_prime = --topics_count_[s];
       N_vs_prime = --word_topics_count[s];
 #if defined SMOLA_ALIAS_LDA
       N_s = N_s_prime + 1;
       N_vs = N_vs_prime + 1;
 #endif
-    } else {
-      N_s_prime = topics_count_[s];
-      N_vs_prime = word_topics_count[s];
-#if defined SMOLA_ALIAS_LDA
-      N_s = N_s_prime;
-      N_vs = N_vs_prime;
-#endif
-    }
     N_ms_prime = --(*doc_topics_count)[s];
 #if defined SMOLA_ALIAS_LDA
     N_ms = N_ms_prime + 1;
@@ -761,7 +638,6 @@ void AliasLDASampler::SampleDocument(Word* word, int doc_length,
     }
 
     // prepare samples from q: second part of the proposal
-    // TODO(yafei) unchanged during inference
     q_sum = 0.0;
     std::vector<int>& word_v_q_samples = q_samples_[v];
     const int word_v_q_samples_size = (int)word_v_q_samples.size();
@@ -805,14 +681,14 @@ void AliasLDASampler::SampleDocument(Word* word, int doc_length,
       const int cached_samples = K_ * mh_step_;
       word_v_q_samples.reserve(cached_samples);
       for (int i = word_v_q_samples_size; i < cached_samples; i++) {
-        word_v_q_samples.push_back(q_alias_.Sample(uniform_01_.GetNext()));
+        word_v_q_samples.push_back(q_alias_.Sample(random_.GetNext()));
       }
     } else {
       q_sum = q_sums_[v];
     }
 
     for (int step = 0; step < mh_step_; step++) {
-      sample = uniform_01_.GetNext() * (p_sum + q_sum);
+      sample = random_.GetNext() * (p_sum + q_sum);
       if (sample < p_sum) {
         // sample from p
         IntTable::const_iterator first = doc_topics_count->begin();
@@ -840,10 +716,8 @@ void AliasLDASampler::SampleDocument(Word* word, int doc_length,
         N_vt = N_vt_prime;
         N_mt = N_mt_prime;
         if (old_k == t) {
-          if (mode_ == kSampleMode) {
             N_t++;
             N_vt++;
-          }
           N_mt++;
         }
 #endif
@@ -862,7 +736,7 @@ void AliasLDASampler::SampleDocument(Word* word, int doc_length,
                       (N_mt_prime + hp_alpha_t) / temp_t;
 #endif
         assert(accept_rate >= 0.0);
-        if (uniform_01_.GetNext() < accept_rate) {
+        if (random_.GetNext() < accept_rate) {
           word->k = t;
           s = t;
 #if defined SMOLA_ALIAS_LDA
@@ -879,10 +753,8 @@ void AliasLDASampler::SampleDocument(Word* word, int doc_length,
       }
     }
 
-    if (mode_ == kSampleMode) {
       ++topics_count_[s];
       ++word_topics_count[s];
-    }
     ++(*doc_topics_count)[s];
   }
 }
@@ -892,21 +764,6 @@ void AliasLDASampler::SampleDocument(Word* word, int doc_length,
 /************************************************************************/
 int LightLDASampler::InitializeSampler() {
   if (SamplerBase::InitializeSampler() != 0) {
-    return -1;
-  }
-
-  std::vector<double> hp_alpha = hp_alpha_;
-  hp_alpha_alias_table_.Build(&hp_alpha_alias_, &hp_alpha, hp_sum_alpha_);
-  word_topics_pdf_.resize(K_);
-  words_topic_samples_.resize(V_);
-  if (mh_step_ == 0) {
-    mh_step_ = 8;
-  }
-  return 0;
-}
-
-int LightLDASampler::InitializeInfer() {
-  if (SamplerBase::InitializeInfer() != 0) {
     return -1;
   }
 
@@ -951,10 +808,8 @@ void LightLDASampler::SampleDocument(Word* word, int doc_length,
     N_vs_prime = N_vs = word_topics_count[s];
     N_ms_prime = N_ms = (*doc_topics_count)[s];
     if (old_k == s) {
-      if (mode_ == kSampleMode) {
         N_s_prime--;
         N_vs_prime--;
-      }
       N_ms_prime--;
     }
     hp_alpha_s = hp_alpha_[s];
@@ -981,10 +836,8 @@ void LightLDASampler::SampleDocument(Word* word, int doc_length,
           N_vt_prime = N_vt = word_topics_count[t];
           N_mt_prime = N_mt = (*doc_topics_count)[t];
           if (old_k == t) {
-            if (mode_ == kSampleMode) {
               N_t_prime--;
               N_vt_prime--;
-            }
             N_mt_prime--;
           }
           hp_alpha_t = hp_alpha_[t];
@@ -997,7 +850,7 @@ void LightLDASampler::SampleDocument(Word* word, int doc_length,
                         (N_s + hp_sum_beta_);
 
           assert(accept_rate >= 0.0);
-          if (uniform_01_.GetNext() < accept_rate) {
+          if (random_.GetNext() < accept_rate) {
             word->k = t;
             s = t;
             N_s = N_t;
@@ -1030,10 +883,8 @@ void LightLDASampler::SampleDocument(Word* word, int doc_length,
           N_vt_prime = N_vt = word_topics_count[t];
           N_mt_prime = N_mt = (*doc_topics_count)[t];
           if (old_k == t) {
-            if (mode_ == kSampleMode) {
               N_t_prime--;
               N_vt_prime--;
-            }
             N_mt_prime--;
           }
           hp_alpha_t = hp_alpha_[t];
@@ -1045,7 +896,7 @@ void LightLDASampler::SampleDocument(Word* word, int doc_length,
                         (N_mt + hp_alpha_t);
 
           assert(accept_rate >= 0.0);
-          if (uniform_01_.GetNext() < accept_rate) {
+          if (random_.GetNext() < accept_rate) {
             word->k = t;
             s = t;
             N_s = N_t;
@@ -1061,12 +912,10 @@ void LightLDASampler::SampleDocument(Word* word, int doc_length,
     }
 
     if (old_k != s) {
-      if (mode_ == kSampleMode) {
         --topics_count_[old_k];
         --word_topics_count[old_k];
         ++topics_count_[s];
         ++word_topics_count[s];
-      }
       --(*doc_topics_count)[old_k];
       ++(*doc_topics_count)[s];
     }
@@ -1075,7 +924,6 @@ void LightLDASampler::SampleDocument(Word* word, int doc_length,
 
 int LightLDASampler::SampleWithWord(int v) {
   // word proposal: (N_vk + beta)/(N_k + sum_beta)
-  // TODO(yafei) unchanged during inference
   std::vector<int>& word_v_topic_samples = words_topic_samples_[v];
   if (word_v_topic_samples.empty()) {
     double sum = 0.0;
@@ -1111,7 +959,7 @@ int LightLDASampler::SampleWithWord(int v) {
     int cached_samples = K_ * mh_step_;
     word_v_topic_samples.reserve(cached_samples);
     for (int i = 0; i < cached_samples; i++) {
-      word_v_topic_samples.push_back(word_alias_.Sample(uniform_01_.GetNext()));
+      word_v_topic_samples.push_back(word_alias_.Sample(random_.GetNext()));
     }
   }
 
@@ -1122,7 +970,7 @@ int LightLDASampler::SampleWithWord(int v) {
 
 int LightLDASampler::SampleWithDoc(Word* word, int doc_length, int v) {
   // doc proposal: N_mk + alpha_k
-  double sample = uniform_01_.GetNext() * (hp_sum_alpha_ + doc_length);
+  double sample = random_.GetNext() * (hp_sum_alpha_ + doc_length);
   if (sample < hp_sum_alpha_) {
     return hp_alpha_alias_.Sample(sample / hp_sum_alpha_);
   } else {
