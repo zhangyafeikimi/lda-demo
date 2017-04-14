@@ -7,59 +7,7 @@
 #include <string>
 #include "x.h"
 
-int LoadTable(const std::string& filename, IntTable* table) {
-  ScopedFile fp(filename.c_str(), ScopedFile::Read);
-  int id, count;
-  int r;
-  for (;;) {
-    r = fscanf(fp, "%d\t%d\n", &id, &count);
-    if (r != 2) {
-      break;
-    }
-    // table is empty
-    (*table)[id] += count;
-  }
-  return 0;
-}
-
-void SaveTable(const std::string& filename, const IntTable& table) {
-  ScopedFile fp(filename.c_str(), ScopedFile::Write);
-  IntTable::const_iterator first = table.begin();
-  IntTable::const_iterator last = table.end();
-  for (; first != last; ++first) {
-    fprintf(fp, "%d\t%d\n", first.id(), first.count());
-  }
-}
-
-int LoadTables(const std::string& filename, IntTables* tables) {
-  ScopedFile fp(filename.c_str(), ScopedFile::Read);
-  int i, id, count;
-  int r;
-  for (;;) {
-    r = fscanf(fp, "%d\t%d\t%d\n", &i, &id, &count);
-    if (r != 3) {
-      break;
-    }
-    IntTable& table = (*tables)[i];
-    table[id] += count;
-  }
-  return 0;
-}
-
-void SaveTables(const std::string& filename, const IntTables& tables) {
-  ScopedFile fp(filename.c_str(), ScopedFile::Write);
-  const int d1 = tables.d1();
-  for (int i = 0; i < d1; i++) {
-    const IntTable& table = tables[i];
-    IntTable::const_iterator first = table.begin();
-    IntTable::const_iterator last = table.end();
-    for (; first != last; ++first) {
-      fprintf(fp, "%d\t%d\t%d\n", i, first.id(), first.count());
-    }
-  }
-}
-
-int Model::LoadCorpus(const std::string& filename, int with_id) {
+bool Model::LoadCorpus(const std::string& filename, int with_id) {
   int line_no = 0;
   char* endptr;
   char* doc_id = NULL;
@@ -146,18 +94,18 @@ int Model::LoadCorpus(const std::string& filename, int with_id) {
 
   if (M_ == 0) {
     Error("Loaded zero documents.\n");
-    return -1;
+    return false;
   }
   if (V_ == 0) {
     Error("Loaded an empty vocabulary.\n");
-    return -2;
+    return false;
   }
 
   Log("Loaded %d documents with a %d-size vocabulary.\n", M_, V_);
-  return 0;
+  return true;
 }
 
-int Model::LoadMVK(const std::string& filename) {
+bool Model::LoadMVK(const std::string& filename) {
   ScopedFile fp(filename.c_str(), ScopedFile::Read);
   int r = 0;
   r += fscanf(fp, "M=%d\n", &M_);
@@ -165,27 +113,27 @@ int Model::LoadMVK(const std::string& filename) {
   r += fscanf(fp, "K=%d\n", &K_);
   if (r != 3) {
     Error("Loading \"%s\" failed\n", filename.c_str());
-    return -1;
+    return false;
   }
-  return 0;
+  return true;
 }
 
-int Model::LoadTopicsCount(const std::string& filename) {
-  topics_count_.InitDense(K_);
-  return LoadTable(filename, &topics_count_);
+bool Model::LoadTopicsCount(const std::string& filename) {
+  topics_count_.Init(K_);
+  return topics_count_.Load(filename);
 }
 
-int Model::LoadWordsTopicsCount(const std::string& filename) {
-  words_topics_count_.Init(V_, K_, storage_type_);
-  return LoadTables(filename, &words_topics_count_);
+bool Model::LoadWordsTopicsCount(const std::string& filename) {
+  words_topics_count_.Init(V_, K_);
+  return words_topics_count_.Load(filename);
 }
 
-int Model::LoadDocsTopicsCount(const std::string& filename) {
-  docs_topics_count_.Init(M_, K_, storage_type_);
-  return LoadTables(filename, &docs_topics_count_);
+bool Model::LoadDocsTopicsCount(const std::string& filename) {
+  docs_topics_count_.Init(M_, K_);
+  return docs_topics_count_.Load(filename);
 }
 
-int Model::LoadHPAlpha(const std::string& filename) {
+bool Model::LoadHPAlpha(const std::string& filename) {
   ScopedFile fp(filename.c_str(), ScopedFile::Read);
   int r = 0;
   hp_alpha_.resize(K_);
@@ -194,54 +142,57 @@ int Model::LoadHPAlpha(const std::string& filename) {
   }
   if (r != K_) {
     Error("Loading \"%s\" failed\n", filename.c_str());
-    return -1;
+    return false;
   }
 
   hp_sum_alpha_ = 0.0;
   for (int k = 0; k < K_; k++) {
     hp_sum_alpha_ += hp_alpha_[k];
   }
-  return 0;
+  return true;
 }
 
-int Model::LoadHPBeta(const std::string& filename) {
+bool Model::LoadHPBeta(const std::string& filename) {
   ScopedFile fp(filename.c_str(), ScopedFile::Read);
   int r = fscanf(fp, "%lg\n", &hp_beta_);
   if (r != 1) {
     Error("Loading \"%s\" failed\n", filename.c_str());
-    return -1;
+    return false;
   }
   hp_sum_beta_ = hp_beta_ * V_;
-  return 0;
+  return true;
 }
 
-void Model::SaveMVK(const std::string& filename) const {
+bool Model::SaveMVK(const std::string& filename) const {
   ScopedFile fp(filename.c_str(), ScopedFile::Write);
   fprintf(fp, "M=%d\n", M_);
   fprintf(fp, "V=%d\n", V_);
   fprintf(fp, "K=%d\n", K_);
+  return true;
 }
 
-void Model::SaveTopicsCount(const std::string& filename) const {
-  SaveTable(filename, topics_count_);
+bool Model::SaveTopicsCount(const std::string& filename) const {
+  return topics_count_.Save(filename);
 }
 
-void Model::SaveWordsTopicsCount(const std::string& filename) const {
-  SaveTables(filename, words_topics_count_);
+bool Model::SaveWordsTopicsCount(const std::string& filename) const {
+  return words_topics_count_.Save(filename);
 }
 
-void Model::SaveDocsTopicsCount(const std::string& filename) const {
-  SaveTables(filename, docs_topics_count_);
+bool Model::SaveDocsTopicsCount(const std::string& filename) const {
+  return docs_topics_count_.Save(filename);
 }
 
-void Model::SaveHPAlpha(const std::string& filename) const {
+bool Model::SaveHPAlpha(const std::string& filename) const {
   ScopedFile fp(filename.c_str(), ScopedFile::Write);
   for (int k = 0; k < K_; k++) {
     fprintf(fp, "%lg\n", hp_alpha_[k]);
   }
+  return true;
 }
 
-void Model::SaveHPBeta(const std::string& filename) const {
+bool Model::SaveHPBeta(const std::string& filename) const {
   ScopedFile fp(filename.c_str(), ScopedFile::Write);
   fprintf(fp, "%lg\n", hp_beta_);
+  return true;
 }

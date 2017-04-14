@@ -18,6 +18,7 @@ endif
 OBJECT=\
 src/lda-train.o \
 src/model.o \
+src/rand.o \
 src/sampler.o
 BIN= lda-train$(EXE)
 

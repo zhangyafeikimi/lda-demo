@@ -29,7 +29,6 @@ int hp_opt_beta_iteration = 200;
 int total_iteration = 200;
 int burnin_iteration = 10;
 int log_likelihood_interval = 10;
-int storage_type = kHashTable;
 
 // LightLDASampler options
 int mh_step = 8;
@@ -89,9 +88,6 @@ void Usage() {
           "    -log_likelihood_interval INTERVAL\n"
           "      Interval of calculating log likelihood. 0 disables it.\n"
           "      Default is \"%d\".\n"
-          "    -storage_type 1/2/3/4\n"
-          "      Storage type. 1, hash; 2, sparse; 3, dense; 4, array.\n"
-          "      Default is \"%d\".\n"
           "    -mh_step MH_STEP\n"
           "      Number of MH steps(aliaslda or lightlda).\n"
           "      Default is \"%d\".\n"
@@ -104,7 +100,7 @@ void Usage() {
           doc_with_id, sampler.c_str(), K, alpha, beta, hp_opt, hp_opt_interval,
           hp_opt_alpha_shape, hp_opt_alpha_scale, hp_opt_alpha_iteration,
           hp_opt_beta_iteration, total_iteration, burnin_iteration,
-          log_likelihood_interval, storage_type, mh_step, enable_word_proposal,
+          log_likelihood_interval, mh_step, enable_word_proposal,
           enable_doc_proposal);
   exit(1);
 }
@@ -181,10 +177,6 @@ int main(int argc, char** argv) {
       CHECK_MISSING_ARG(argc, argv, i, Usage());
       log_likelihood_interval = xatoi(argv[i + 1]);
       COMSUME_2_ARG(argc, argv, i);
-    } else if (s == "-storage_type") {
-      CHECK_MISSING_ARG(argc, argv, i, Usage());
-      storage_type = xatoi(argv[i + 1]);
-      COMSUME_2_ARG(argc, argv, i);
     } else if (s == "-mh_step") {
       CHECK_MISSING_ARG(argc, argv, i, Usage());
       mh_step = xatoi(argv[i + 1]);
@@ -233,7 +225,6 @@ int main(int argc, char** argv) {
   CHECK_EXIT(burnin_iteration >= 0);
   CHECK_EXIT(total_iteration > burnin_iteration);
   CHECK_EXIT(log_likelihood_interval >= 0);
-  CHECK_EXIT(storage_type >= 1 && storage_type <= 4);
   CHECK_EXIT(mh_step > 0);
   CHECK_EXIT(enable_word_proposal >= 0 && enable_word_proposal <= 1);
   CHECK_EXIT(enable_doc_proposal >= 0 && enable_doc_proposal <= 1);
@@ -275,7 +266,6 @@ int main(int argc, char** argv) {
   p->total_iteration() = total_iteration;
   p->burnin_iteration() = burnin_iteration;
   p->log_likelihood_interval() = log_likelihood_interval;
-  p->storage_type() = storage_type;
 
   { p->LoadCorpus(input_corpus_filename, doc_with_id); }
   p->Train();

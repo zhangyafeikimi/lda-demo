@@ -35,7 +35,7 @@ class SamplerBase : public Model {
   virtual void PostSampleDocument(int m);
   virtual void SampleDocument(int m);
   virtual void SampleDocument(Word* word, int doc_length,
-                              IntTable* doc_topics_count);
+                              HashTable* doc_topics_count);
   virtual void HPOpt_Initialize();
   virtual void HPOpt_Optimize();
   virtual void HPOpt_OptimizeAlpha();
@@ -63,7 +63,7 @@ class GibbsSampler : public SamplerBase {
   GibbsSampler() {}
   virtual int InitializeSampler();
   virtual void SampleDocument(Word* word, int doc_length,
-                              IntTable* doc_topics_count);
+                              HashTable* doc_topics_count);
 };
 
 /************************************************************************/
@@ -117,7 +117,7 @@ class AliasLDASampler : public SamplerBase {
 
   virtual int InitializeSampler();
   virtual void SampleDocument(Word* word, int doc_length,
-                              IntTable* doc_topics_count);
+                              HashTable* doc_topics_count);
 };
 
 /************************************************************************/
@@ -150,7 +150,7 @@ class LightLDASampler : public SamplerBase {
   virtual int InitializeSampler();
   virtual void PostSampleCorpus();
   virtual void SampleDocument(Word* word, int doc_length,
-                              IntTable* doc_topics_count);
+                              HashTable* doc_topics_count);
 
  private:
   int SampleWithWord(int v);

@@ -21,11 +21,6 @@ struct Word {
   int k;  // topic id assign to this word, starts from 0
 };
 
-int LoadTable(const std::string& filename, IntTable* table);
-void SaveTable(const std::string& filename, const IntTable& table);
-int LoadTables(const std::string& filename, IntTables* tables);
-void SaveTables(const std::string& filename, const IntTables& tables);
-
 class Model {
  protected:
   // corpus
@@ -37,11 +32,11 @@ class Model {
   // model parameters
   int K_;  // # of topics
   // topics_count_[k]: # of words assigned to topic k
-  IntTable topics_count_;
+  DenseTable topics_count_;
   // docs_topics_count_[m][k]: # of words in doc m assigned to topic k
-  IntTables docs_topics_count_;
+  HashTables docs_topics_count_;
   // words_topics_count_[v][k]: # of word v assigned to topic k
-  IntTables words_topics_count_;
+  HashTables words_topics_count_;
 
   // model hyper parameters
   // hp_alpha_[k]: asymmetric doc-topic prior for topic k
@@ -76,7 +71,6 @@ class Model {
   int burnin_iteration_;
   int log_likelihood_interval_;
   int iteration_;
-  int storage_type_;
 
  public:
   Model()
@@ -95,8 +89,7 @@ class Model {
         total_iteration_(0),
         burnin_iteration_(0),
         log_likelihood_interval_(0),
-        iteration_(0),
-        storage_type_(kHashTable) {}
+        iteration_(0) {}
   virtual ~Model() {}
 
   // getters & setters
@@ -114,24 +107,23 @@ class Model {
   int& total_iteration() { return total_iteration_; }
   int& burnin_iteration() { return burnin_iteration_; }
   int& log_likelihood_interval() { return log_likelihood_interval_; }
-  int& storage_type() { return storage_type_; }
   // end of getters & setters
 
-  int LoadCorpus(const std::string& filename, int with_id);
+  bool LoadCorpus(const std::string& filename, int with_id);
 
-  int LoadMVK(const std::string& filename);
-  int LoadTopicsCount(const std::string& filename);
-  int LoadWordsTopicsCount(const std::string& filename);
-  int LoadDocsTopicsCount(const std::string& filename);
-  int LoadHPAlpha(const std::string& filename);
-  int LoadHPBeta(const std::string& filename);
+  bool LoadMVK(const std::string& filename);
+  bool LoadTopicsCount(const std::string& filename);
+  bool LoadWordsTopicsCount(const std::string& filename);
+  bool LoadDocsTopicsCount(const std::string& filename);
+  bool LoadHPAlpha(const std::string& filename);
+  bool LoadHPBeta(const std::string& filename);
 
-  void SaveMVK(const std::string& filename) const;
-  void SaveTopicsCount(const std::string& filename) const;
-  void SaveWordsTopicsCount(const std::string& filename) const;
-  void SaveDocsTopicsCount(const std::string& filename) const;
-  void SaveHPAlpha(const std::string& filename) const;
-  void SaveHPBeta(const std::string& filename) const;
+  bool SaveMVK(const std::string& filename) const;
+  bool SaveTopicsCount(const std::string& filename) const;
+  bool SaveWordsTopicsCount(const std::string& filename) const;
+  bool SaveDocsTopicsCount(const std::string& filename) const;
+  bool SaveHPAlpha(const std::string& filename) const;
+  bool SaveHPBeta(const std::string& filename) const;
 };
 
 #endif  // MODEL_H_

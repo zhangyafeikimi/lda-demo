@@ -109,15 +109,15 @@ int SamplerBase::InitializeSampler() {
     total_iteration_ = 200;
   }
 
-  topics_count_.InitDense(K_);
-  docs_topics_count_.Init(M_, K_, storage_type_);
-  words_topics_count_.Init(V_, K_, storage_type_);
+  topics_count_.Init(K_);
+  docs_topics_count_.Init(M_, K_);
+  words_topics_count_.Init(V_, K_);
 
   // random initialize topics
   for (int m = 0; m < M_; m++) {
     const Doc& doc = docs_[m];
     Word* word = &words_[doc.index];
-    IntTable& doc_topics_count = docs_topics_count_[m];
+    HashTable& doc_topics_count = docs_topics_count_[m];
     for (int n = 0; n < doc.N; n++, word++) {
       const int v = word->v;
       const int new_topic = random_.GetNext(K_);
@@ -139,13 +139,13 @@ double SamplerBase::LogLikelihood() const {
   for (int m = 0; m < M_; m++) {
     const Doc& doc = docs_[m];
     const Word* word = &words_[doc.index];
-    const IntTable& doc_topics_count = docs_topics_count_[m];
+    const HashTable& doc_topics_count = docs_topics_count_[m];
     for (int n = 0; n < doc.N; n++, word++) {
       const int v = word->v;
       double word_sum = 0.0;
       for (int k = 0; k < K_; k++) {
         double phi_kv = (words_topics_count_[v][k] + hp_beta_) /
-          (topics_count_[k] + hp_sum_beta_);
+                        (topics_count_[k] + hp_sum_beta_);
         word_sum += (doc_topics_count[k] + hp_alpha_[k]) * phi_kv;
       }
       word_sum /= (doc.N + hp_sum_alpha_);
@@ -213,12 +213,12 @@ void SamplerBase::PostSampleDocument(int m) { HPOpt_PostSampleDocument(m); }
 void SamplerBase::SampleDocument(int m) {
   const Doc& doc = docs_[m];
   Word* word = &words_[doc.index];
-  IntTable& doc_topics_count = docs_topics_count_[m];
+  HashTable& doc_topics_count = docs_topics_count_[m];
   SampleDocument(word, doc.N, &doc_topics_count);
 }
 
 void SamplerBase::SampleDocument(Word* word, int doc_length,
-                                 IntTable* doc_topics_count) {
+                                 HashTable* doc_topics_count) {
   Error("SampleDocument is not implemented.\n");
 }
 
@@ -282,7 +282,7 @@ void SamplerBase::HPOpt_OptimizeAlpha() {
 
 void SamplerBase::HPOpt_PrepareOptimizeBeta() {
   for (int m = 0; m < M_; m++) {
-    const IntTable& doc_topics_count = docs_topics_count_[m];
+    const HashTable& doc_topics_count = docs_topics_count_[m];
     for (int k = 0; k < K_; k++) {
       const int count = doc_topics_count[k];
       if (count == 0) {
@@ -334,7 +334,7 @@ void SamplerBase::HPOpt_PostSampleDocument(int m) {
 
   if (hp_opt_alpha_iteration_ > 0) {
     const Doc& doc = docs_[m];
-    const IntTable& doc_topics_count = docs_topics_count_[m];
+    const HashTable& doc_topics_count = docs_topics_count_[m];
     for (int k = 0; k < K_; k++) {
       const int count = doc_topics_count[k];
       if (count == 0) {
@@ -369,15 +369,15 @@ int GibbsSampler::InitializeSampler() {
 }
 
 void GibbsSampler::SampleDocument(Word* word, int doc_length,
-                                  IntTable* doc_topics_count) {
+                                  HashTable* doc_topics_count) {
   for (int n = 0; n < doc_length; n++, word++) {
     const int v = word->v;
     const int old_k = word->k;
-    IntTable& word_topics_count = words_topics_count_[v];
+    HashTable& word_topics_count = words_topics_count_[v];
     int k, new_k;
 
-      --topics_count_[old_k];
-      --word_topics_count[old_k];
+    --topics_count_[old_k];
+    --word_topics_count[old_k];
     --(*doc_topics_count)[old_k];
 
     word_topic_cdf_[0] = 0.0;
@@ -392,8 +392,8 @@ void GibbsSampler::SampleDocument(Word* word, int doc_length,
                           ((*doc_topics_count)[k] + hp_alpha_[k]);
 
     new_k = SampleCDF(word_topic_cdf_, &random_);
-      ++topics_count_[new_k];
-      ++word_topics_count[new_k];
+    ++topics_count_[new_k];
+    ++word_topics_count[new_k];
     ++(*doc_topics_count)[new_k];
     word->k = new_k;
   }
@@ -424,9 +424,9 @@ void SparseLDASampler::PostSampleCorpus() {
 }
 
 void SparseLDASampler::PostSampleDocument(int m) {
-  const IntTable& doc_topics_count = docs_topics_count_[m];
-  IntTable::const_iterator first = doc_topics_count.begin();
-  IntTable::const_iterator last = doc_topics_count.end();
+  const HashTable& doc_topics_count = docs_topics_count_[m];
+  HashTable::const_iterator first = doc_topics_count.begin();
+  HashTable::const_iterator last = doc_topics_count.end();
   for (; first != last; ++first) {
     const int k = first.id();
     cache_[k] = hp_alpha_[k] / (topics_count_[k] + hp_sum_beta_);
@@ -453,8 +453,8 @@ void SparseLDASampler::SampleDocument(int m) {
 }
 
 void SparseLDASampler::RemoveOrAddWordTopic(int m, int v, int k, int remove) {
-  IntTable& doc_topics_count = docs_topics_count_[m];
-  IntTable& word_topics_count = words_topics_count_[v];
+  HashTable& doc_topics_count = docs_topics_count_[m];
+  HashTable& word_topics_count = words_topics_count_[v];
   double& smooth_bucket_k = smooth_pdf_[k];
   double& doc_bucket_k = doc_pdf_[k];
   const double hp_alpha_k = hp_alpha_[k];
@@ -487,9 +487,9 @@ int SparseLDASampler::SampleDocumentWord(int m, int v) {
   int new_k = -1;
 
   if (sample < word_sum_) {
-    const IntTable& word_topics_count = words_topics_count_[v];
-    IntTable::const_iterator first = word_topics_count.begin();
-    IntTable::const_iterator last = word_topics_count.end();
+    const HashTable& word_topics_count = words_topics_count_[v];
+    HashTable::const_iterator first = word_topics_count.begin();
+    HashTable::const_iterator last = word_topics_count.end();
     for (; first != last; ++first) {
       const int k = first.id();
       sample -= word_pdf_[k];
@@ -501,9 +501,9 @@ int SparseLDASampler::SampleDocumentWord(int m, int v) {
   } else {
     sample -= word_sum_;
     if (sample < doc_sum_) {
-      const IntTable& doc_topics_count = docs_topics_count_[m];
-      IntTable::const_iterator first = doc_topics_count.begin();
-      IntTable::const_iterator last = doc_topics_count.end();
+      const HashTable& doc_topics_count = docs_topics_count_[m];
+      HashTable::const_iterator first = doc_topics_count.begin();
+      HashTable::const_iterator last = doc_topics_count.end();
       for (; first != last; ++first) {
         const int k = first.id();
         sample -= doc_pdf_[k];
@@ -542,9 +542,9 @@ void SparseLDASampler::PrepareSmoothBucket() {
 void SparseLDASampler::PrepareDocBucket(int m) {
   doc_sum_ = 0.0;
   doc_pdf_.assign(K_, 0);
-  const IntTable& doc_topics_count = docs_topics_count_[m];
-  IntTable::const_iterator first = doc_topics_count.begin();
-  IntTable::const_iterator last = doc_topics_count.end();
+  const HashTable& doc_topics_count = docs_topics_count_[m];
+  HashTable::const_iterator first = doc_topics_count.begin();
+  HashTable::const_iterator last = doc_topics_count.end();
   for (; first != last; ++first) {
     const int k = first.id();
     const double tmp = topics_count_[k] + hp_sum_beta_;
@@ -558,9 +558,9 @@ void SparseLDASampler::PrepareDocBucket(int m) {
 void SparseLDASampler::PrepareWordBucket(int v) {
   word_sum_ = 0.0;
   word_pdf_.assign(K_, 0);
-  const IntTable& word_topics_count = words_topics_count_[v];
-  IntTable::const_iterator first = word_topics_count.begin();
-  IntTable::const_iterator last = word_topics_count.end();
+  const HashTable& word_topics_count = words_topics_count_[v];
+  HashTable::const_iterator first = word_topics_count.begin();
+  HashTable::const_iterator last = word_topics_count.end();
   for (; first != last; ++first) {
     const int k = first.id();
     const double pdf = first.count() * cache_[k];
@@ -588,7 +588,7 @@ int AliasLDASampler::InitializeSampler() {
 }
 
 void AliasLDASampler::SampleDocument(Word* word, int doc_length,
-                                     IntTable* doc_topics_count) {
+                                     HashTable* doc_topics_count) {
   int s, t;
 // Macro SMOLA_ALIAS_LDA implements the pure algorithm from
 // Alex Smola's paper. Otherwise,
@@ -607,15 +607,15 @@ void AliasLDASampler::SampleDocument(Word* word, int doc_length,
 
   for (int n = 0; n < doc_length; n++, word++) {
     const int v = word->v;
-    IntTable& word_topics_count = words_topics_count_[v];
+    HashTable& word_topics_count = words_topics_count_[v];
     const int old_k = word->k;
     s = old_k;
 
-      N_s_prime = --topics_count_[s];
-      N_vs_prime = --word_topics_count[s];
+    N_s_prime = --topics_count_[s];
+    N_vs_prime = --word_topics_count[s];
 #if defined SMOLA_ALIAS_LDA
-      N_s = N_s_prime + 1;
-      N_vs = N_vs_prime + 1;
+    N_s = N_s_prime + 1;
+    N_vs = N_vs_prime + 1;
 #endif
     N_ms_prime = --(*doc_topics_count)[s];
 #if defined SMOLA_ALIAS_LDA
@@ -627,8 +627,8 @@ void AliasLDASampler::SampleDocument(Word* word, int doc_length,
 
     // construct p: first part of the proposal
     p_sum = 0.0;
-    IntTable::const_iterator first = doc_topics_count->begin();
-    IntTable::const_iterator last = doc_topics_count->end();
+    HashTable::const_iterator first = doc_topics_count->begin();
+    HashTable::const_iterator last = doc_topics_count->end();
     for (; first != last; ++first) {
       const int k = first.id();
       double& pdf = p_pdf_[k];
@@ -643,29 +643,20 @@ void AliasLDASampler::SampleDocument(Word* word, int doc_length,
     const int word_v_q_samples_size = (int)word_v_q_samples.size();
     if (word_v_q_samples_size < mh_step_) {
       // construct q
-      if (storage_type_ == kHashTable || storage_type_ == kSparseTable) {
-        q_pdf_.assign(K_, 0.0);
-        IntTable::const_iterator first = word_topics_count.begin();
-        IntTable::const_iterator last = word_topics_count.end();
-        for (; first != last; ++first) {
-          const int k = first.id();
-          double& pdf = q_pdf_[k];
-          pdf = hp_alpha_[k] * (word_topics_count[k] + hp_beta_) /
-                (topics_count_[k] + hp_sum_beta_);
-          q_sum += pdf;
-        }
-        for (int k = 0; k < K_; k++) {
-          double& pdf = q_pdf_[k];
-          if (pdf == 0.0) {
-            pdf = hp_alpha_[k] * hp_beta_ / (topics_count_[k] + hp_sum_beta_);
-            q_sum += pdf;
-          }
-        }
-      } else {
-        for (int k = 0; k < K_; k++) {
-          double& pdf = q_pdf_[k];
-          pdf = hp_alpha_[k] * (word_topics_count[k] + hp_beta_) /
-                (topics_count_[k] + hp_sum_beta_);
+      q_pdf_.assign(K_, 0.0);
+      HashTable::const_iterator first = word_topics_count.begin();
+      HashTable::const_iterator last = word_topics_count.end();
+      for (; first != last; ++first) {
+        const int k = first.id();
+        double& pdf = q_pdf_[k];
+        pdf = hp_alpha_[k] * (word_topics_count[k] + hp_beta_) /
+              (topics_count_[k] + hp_sum_beta_);
+        q_sum += pdf;
+      }
+      for (int k = 0; k < K_; k++) {
+        double& pdf = q_pdf_[k];
+        if (pdf == 0.0) {
+          pdf = hp_alpha_[k] * hp_beta_ / (topics_count_[k] + hp_sum_beta_);
           q_sum += pdf;
         }
       }
@@ -691,8 +682,8 @@ void AliasLDASampler::SampleDocument(Word* word, int doc_length,
       sample = random_.GetNext() * (p_sum + q_sum);
       if (sample < p_sum) {
         // sample from p
-        IntTable::const_iterator first = doc_topics_count->begin();
-        IntTable::const_iterator last = doc_topics_count->end();
+        HashTable::const_iterator first = doc_topics_count->begin();
+        HashTable::const_iterator last = doc_topics_count->end();
         for (; first != last; ++first) {
           const int k = first.id();
           sample -= p_pdf_[k];
@@ -716,8 +707,8 @@ void AliasLDASampler::SampleDocument(Word* word, int doc_length,
         N_vt = N_vt_prime;
         N_mt = N_mt_prime;
         if (old_k == t) {
-            N_t++;
-            N_vt++;
+          N_t++;
+          N_vt++;
           N_mt++;
         }
 #endif
@@ -753,8 +744,8 @@ void AliasLDASampler::SampleDocument(Word* word, int doc_length,
       }
     }
 
-      ++topics_count_[s];
-      ++word_topics_count[s];
+    ++topics_count_[s];
+    ++word_topics_count[s];
     ++(*doc_topics_count)[s];
   }
 }
@@ -789,7 +780,7 @@ void LightLDASampler::PostSampleCorpus() {
 }
 
 void LightLDASampler::SampleDocument(Word* word, int doc_length,
-                                     IntTable* doc_topics_count) {
+                                     HashTable* doc_topics_count) {
   int s, t;
   int N_s, N_vs, N_ms, N_t, N_vt, N_mt;
   int N_s_prime, N_vs_prime, N_ms_prime;
@@ -800,7 +791,7 @@ void LightLDASampler::SampleDocument(Word* word, int doc_length,
 
   for (int n = 0; n < doc_length; n++, word++) {
     const int v = word->v;
-    IntTable& word_topics_count = words_topics_count_[v];
+    HashTable& word_topics_count = words_topics_count_[v];
     const int old_k = word->k;
     s = old_k;
 
@@ -808,8 +799,8 @@ void LightLDASampler::SampleDocument(Word* word, int doc_length,
     N_vs_prime = N_vs = word_topics_count[s];
     N_ms_prime = N_ms = (*doc_topics_count)[s];
     if (old_k == s) {
-        N_s_prime--;
-        N_vs_prime--;
+      N_s_prime--;
+      N_vs_prime--;
       N_ms_prime--;
     }
     hp_alpha_s = hp_alpha_[s];
@@ -836,8 +827,8 @@ void LightLDASampler::SampleDocument(Word* word, int doc_length,
           N_vt_prime = N_vt = word_topics_count[t];
           N_mt_prime = N_mt = (*doc_topics_count)[t];
           if (old_k == t) {
-              N_t_prime--;
-              N_vt_prime--;
+            N_t_prime--;
+            N_vt_prime--;
             N_mt_prime--;
           }
           hp_alpha_t = hp_alpha_[t];
@@ -883,8 +874,8 @@ void LightLDASampler::SampleDocument(Word* word, int doc_length,
           N_vt_prime = N_vt = word_topics_count[t];
           N_mt_prime = N_mt = (*doc_topics_count)[t];
           if (old_k == t) {
-              N_t_prime--;
-              N_vt_prime--;
+            N_t_prime--;
+            N_vt_prime--;
             N_mt_prime--;
           }
           hp_alpha_t = hp_alpha_[t];
@@ -912,10 +903,10 @@ void LightLDASampler::SampleDocument(Word* word, int doc_length,
     }
 
     if (old_k != s) {
-        --topics_count_[old_k];
-        --word_topics_count[old_k];
-        ++topics_count_[s];
-        ++word_topics_count[s];
+      --topics_count_[old_k];
+      --word_topics_count[old_k];
+      ++topics_count_[s];
+      ++word_topics_count[s];
       --(*doc_topics_count)[old_k];
       ++(*doc_topics_count)[s];
     }
@@ -927,30 +918,21 @@ int LightLDASampler::SampleWithWord(int v) {
   std::vector<int>& word_v_topic_samples = words_topic_samples_[v];
   if (word_v_topic_samples.empty()) {
     double sum = 0.0;
-    const IntTable& word_topics_count = words_topics_count_[v];
-    if (storage_type_ == kHashTable || storage_type_ == kSparseTable) {
-      word_topics_pdf_.assign(K_, 0.0);
-      IntTable::const_iterator first = word_topics_count.begin();
-      IntTable::const_iterator last = word_topics_count.end();
-      for (; first != last; ++first) {
-        const int k = first.id();
-        double& pdf = word_topics_pdf_[k];
-        pdf = (first.count() + hp_beta_) / (topics_count_[k] + hp_sum_beta_);
-        sum += pdf;
-      }
+    const HashTable& word_topics_count = words_topics_count_[v];
+    word_topics_pdf_.assign(K_, 0.0);
+    HashTable::const_iterator first = word_topics_count.begin();
+    HashTable::const_iterator last = word_topics_count.end();
+    for (; first != last; ++first) {
+      const int k = first.id();
+      double& pdf = word_topics_pdf_[k];
+      pdf = (first.count() + hp_beta_) / (topics_count_[k] + hp_sum_beta_);
+      sum += pdf;
+    }
 
-      for (int k = 0; k < K_; k++) {
-        double& pdf = word_topics_pdf_[k];
-        if (pdf == 0.0) {
-          pdf = hp_beta_ / (topics_count_[k] + hp_sum_beta_);
-          sum += pdf;
-        }
-      }
-    } else {
-      for (int k = 0; k < K_; k++) {
-        double& pdf = word_topics_pdf_[k];
-        pdf = (word_topics_count[k] + hp_beta_) /
-              (topics_count_[k] + hp_sum_beta_);
+    for (int k = 0; k < K_; k++) {
+      double& pdf = word_topics_pdf_[k];
+      if (pdf == 0.0) {
+        pdf = hp_beta_ / (topics_count_[k] + hp_sum_beta_);
         sum += pdf;
       }
     }
