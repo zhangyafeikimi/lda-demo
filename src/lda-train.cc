@@ -105,7 +105,7 @@ void Usage() {
   exit(1);
 }
 
-int main(int argc, char** argv) {
+void ParseArgs(int argc, char** argv) {
   if (argc == 1) {
     Usage();
   }
@@ -201,34 +201,30 @@ int main(int argc, char** argv) {
     Usage();
   }
 
-#define CHECK_EXIT(condition)               \
-  do {                                      \
-    if (!(condition)) {                     \
-      ERROR("Must have: %s", #condition); \
-      exit(1);                              \
-    }                                       \
-  } while (0)
-
-  CHECK_EXIT(doc_with_id >= 0 && doc_with_id <= 1);
-  CHECK_EXIT(sampler == "lda" || sampler == "sparselda" ||
-             sampler == "aliaslda" || sampler == "lightlda");
-  CHECK_EXIT(K >= 2);
-  CHECK_EXIT(alpha >= 0.0);
-  CHECK_EXIT(beta > 0.0);
-  CHECK_EXIT(hp_opt >= 0 && hp_opt <= 1);
-  CHECK_EXIT(hp_opt_interval > 0);
-  CHECK_EXIT(hp_opt_alpha_shape >= 0.0);
-  CHECK_EXIT(hp_opt_alpha_scale > 0.0);
-  CHECK_EXIT(hp_opt_alpha_iteration >= 0);
-  CHECK_EXIT(hp_opt_beta_iteration >= 0);
-  CHECK_EXIT(total_iteration > 0);
-  CHECK_EXIT(burnin_iteration >= 0);
-  CHECK_EXIT(total_iteration > burnin_iteration);
-  CHECK_EXIT(log_likelihood_interval >= 0);
-  CHECK_EXIT(mh_step > 0);
-  CHECK_EXIT(enable_word_proposal >= 0 && enable_word_proposal <= 1);
-  CHECK_EXIT(enable_doc_proposal >= 0 && enable_doc_proposal <= 1);
-  CHECK_EXIT(enable_word_proposal + enable_doc_proposal != 0);
+  CHECK(doc_with_id >= 0 && doc_with_id <= 1);
+  CHECK(sampler == "lda" || sampler == "sparselda" || sampler == "aliaslda" ||
+        sampler == "lightlda");
+  CHECK(K >= 2);
+  CHECK(alpha >= 0.0);
+  CHECK(beta > 0.0);
+  CHECK(hp_opt >= 0 && hp_opt <= 1);
+  CHECK(hp_opt_interval > 0);
+  CHECK(hp_opt_alpha_shape >= 0.0);
+  CHECK(hp_opt_alpha_scale > 0.0);
+  CHECK(hp_opt_alpha_iteration >= 0);
+  CHECK(hp_opt_beta_iteration >= 0);
+  CHECK(total_iteration > 0);
+  CHECK(burnin_iteration >= 0);
+  CHECK(total_iteration > burnin_iteration);
+  CHECK(log_likelihood_interval >= 0);
+  if (sampler == "aliaslda" || sampler == "lightlda") {
+    CHECK(mh_step > 0);
+  }
+  if (sampler == "lightlda") {
+    CHECK(enable_word_proposal >= 0 && enable_word_proposal <= 1);
+    CHECK(enable_doc_proposal >= 0 && enable_doc_proposal <= 1);
+    CHECK(enable_word_proposal + enable_doc_proposal != 0);
+  }
 
   input_corpus_filename = argv[1];
   if (argc >= 3) {
@@ -236,24 +232,10 @@ int main(int argc, char** argv) {
   } else {
     output_prefix = input_corpus_filename;
   }
+}
 
-  SamplerBase* p = nullptr;
-  if (sampler == "lda") {
-    p = new GibbsSampler();
-  } else if (sampler == "sparselda") {
-    p = new SparseLDASampler();
-  } else if (sampler == "aliaslda") {
-    AliasLDASampler* pp = new AliasLDASampler();
-    pp->mh_step() = mh_step;
-    p = pp;
-  } else if (sampler == "lightlda") {
-    LightLDASampler* pp = new LightLDASampler();
-    pp->mh_step() = mh_step;
-    pp->enable_word_proposal() = enable_word_proposal;
-    pp->enable_doc_proposal() = enable_doc_proposal;
-    p = pp;
-  }
-
+template <class Sampler>
+void Train(Sampler* p) {
   p->K() = K;
   p->alpha() = alpha;
   p->beta() = beta;
@@ -271,5 +253,27 @@ int main(int argc, char** argv) {
   p->Train();
   p->SaveModel(output_prefix);
   delete p;
+}
+
+int main(int argc, char** argv) {
+  ParseArgs(argc, argv);
+
+  if (sampler == "lda") {
+    GibbsSampler* p = new GibbsSampler();
+    Train(p);
+  } else if (sampler == "sparselda") {
+    SparseLDASampler* p = new SparseLDASampler();
+    Train(p);
+  } else if (sampler == "aliaslda") {
+    AliasLDASampler* p = new AliasLDASampler();
+    p->mh_step() = mh_step;
+    Train(p);
+  } else if (sampler == "lightlda") {
+    LightLDASampler* p = new LightLDASampler();
+    p->mh_step() = mh_step;
+    p->enable_word_proposal() = enable_word_proposal;
+    p->enable_doc_proposal() = enable_doc_proposal;
+    Train(p);
+  }
   return 0;
 }

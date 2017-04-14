@@ -16,13 +16,14 @@
 /************************************************************************/
 /* SamplerBase */
 /************************************************************************/
-class SamplerBase : public Model {
+template <class Tables>
+class SamplerBase : public Model<Tables> {
  protected:
   Random random_;
 
  public:
-  virtual int LoadModel(const std::string& prefix);
-  virtual void SaveModel(const std::string& prefix) const;
+  typedef Tables TablesType;
+  typedef typename TablesType::TableType TableType;
 
  public:
   virtual int InitializeSampler();
@@ -35,7 +36,7 @@ class SamplerBase : public Model {
   virtual void PostSampleDocument(int m);
   virtual void SampleDocument(int m);
   virtual void SampleDocument(Word* word, int doc_length,
-                              HashTable* doc_topics_count);
+                              TableType* doc_topics_count);
   virtual void HPOpt_Initialize();
   virtual void HPOpt_Optimize();
   virtual void HPOpt_OptimizeAlpha();
@@ -52,10 +53,306 @@ class SamplerBase : public Model {
   }
 };
 
+template <class Tables>
+int SamplerBase<Tables>::InitializeSampler() {
+  if (hp_sum_alpha_ <= 0.0) {
+    const double avg_doc_len = (double)words_.size() / docs_.size();
+    hp_alpha_.resize(K_, avg_doc_len / K_);
+    hp_sum_alpha_ = avg_doc_len;
+  } else {
+    hp_alpha_.resize(K_, hp_sum_alpha_);
+    hp_sum_alpha_ = hp_sum_alpha_ * K_;
+  }
+
+  if (hp_beta_ <= 0.0) {
+    hp_beta_ = 0.1;
+  }
+  hp_sum_beta_ = V_ * hp_beta_;
+
+  if (hp_opt_) {
+    if (hp_opt_interval_ == 0) {
+      hp_opt_interval_ = 5;
+    }
+    if (hp_opt_alpha_scale_ == 0.0) {
+      hp_opt_alpha_scale_ = 100000.0;
+    }
+    if (hp_opt_alpha_iteration_ == 0) {
+      hp_opt_alpha_iteration_ = 2;
+    }
+    if (hp_opt_beta_iteration_ == 0) {
+      hp_opt_beta_iteration_ = 200;
+    }
+  }
+
+  if (total_iteration_ == 0) {
+    total_iteration_ = 200;
+  }
+
+  topics_count_.Init(K_);
+  docs_topics_count_.Init(M_, K_);
+  words_topics_count_.Init(V_, K_);
+
+  // random initialize topics
+  for (int m = 0; m < M_; m++) {
+    const Doc& doc = docs_[m];
+    Word* word = &words_[doc.index];
+    auto& doc_topics_count = docs_topics_count_[m];
+    for (int n = 0; n < doc.N; n++, word++) {
+      const int v = word->v;
+      const int new_topic = random_.GetNext(K_);
+      word->k = new_topic;
+      ++topics_count_[new_topic];
+      ++doc_topics_count[new_topic];
+      ++words_topics_count_[v][new_topic];
+    }
+  }
+
+  return 0;
+}
+
+template <class Tables>
+double SamplerBase<Tables>::LogLikelihood() const {
+  double sum = 0.0;
+#if defined _OPENMP
+#pragma omp parallel for schedule(static) reduction(+ : sum)
+#endif
+  for (int m = 0; m < M_; m++) {
+    const Doc& doc = docs_[m];
+    const Word* word = &words_[doc.index];
+    const auto& doc_topics_count = docs_topics_count_[m];
+    for (int n = 0; n < doc.N; n++, word++) {
+      const int v = word->v;
+      double word_sum = 0.0;
+      for (int k = 0; k < K_; k++) {
+        double phi_kv = (words_topics_count_[v][k] + hp_beta_) /
+          (topics_count_[k] + hp_sum_beta_);
+        word_sum += (doc_topics_count[k] + hp_alpha_[k]) * phi_kv;
+      }
+      word_sum /= (doc.N + hp_sum_alpha_);
+      sum += log(word_sum);
+    }
+  }
+  return sum;
+}
+
+template <class Tables>
+int SamplerBase<Tables>::Train() {
+  time_t begin, end;
+  time(&begin);
+
+  INFO("Training.");
+
+  if (InitializeSampler() != 0) {
+    return -1;
+  }
+
+  for (iteration_ = 1; iteration_ <= total_iteration_; iteration_++) {
+    time_t iter_begin, iter_end;
+
+    time(&iter_begin);
+    INFO("Iteration %d started.", iteration_);
+    PreSampleCorpus();
+    SampleCorpus();
+    PostSampleCorpus();
+    time(&iter_end);
+
+    INFO("Iteration %d ended, cost %d seconds.", iteration_,
+      (int)(iter_end - iter_begin));
+
+    if (iteration_ > burnin_iteration_ &&
+      iteration_ % log_likelihood_interval_ == 0) {
+        time(&iter_begin);
+        INFO("Calculating LogLikelihood.");
+        const double llh = LogLikelihood();
+        time(&iter_end);
+        INFO("LogLikelihood(total/word)=%lg/%lg, cost %d seconds.", llh,
+          llh / words_.size(), (int)(iter_end - iter_begin));
+    }
+  }
+
+  time(&end);
+  INFO("Training completed, cost %d seconds.", (int)(end - begin));
+  return 0;
+}
+
+template <class Tables>
+void SamplerBase<Tables>::PreSampleCorpus() { HPOpt_Initialize(); }
+
+template <class Tables>
+void SamplerBase<Tables>::PostSampleCorpus() { HPOpt_Optimize(); }
+
+template <class Tables>
+void SamplerBase<Tables>::SampleCorpus() {
+  for (int m = 0; m < M_; m++) {
+    PreSampleDocument(m);
+    SampleDocument(m);
+    PostSampleDocument(m);
+  }
+}
+
+template <class Tables>
+void SamplerBase<Tables>::PreSampleDocument(int m) {}
+
+template <class Tables>
+void SamplerBase<Tables>::PostSampleDocument(int m) { HPOpt_PostSampleDocument(m); }
+
+template <class Tables>
+void SamplerBase<Tables>::SampleDocument(int m) {
+  const Doc& doc = docs_[m];
+  Word* word = &words_[doc.index];
+  auto& doc_topics_count = docs_topics_count_[m];
+  SampleDocument(word, doc.N, &doc_topics_count);
+}
+
+template <class Tables>
+void SamplerBase<Tables>::SampleDocument(Word* word, int doc_length,
+                                 TableType* doc_topics_count) {
+}
+
+template <class Tables>
+void SamplerBase<Tables>::HPOpt_Initialize() {
+  if (!HPOpt_Enabled()) {
+    return;
+  }
+
+  INFO("Hyper optimization will be carried out in this iteration.");
+  docs_topic_count_hist_.clear();
+  docs_topic_count_hist_.resize(K_);
+  doc_len_hist_.clear();
+  word_topic_count_hist_.clear();
+  topic_len_hist_.clear();
+}
+
+template <class Tables>
+void SamplerBase<Tables>::HPOpt_Optimize() {
+  if (!HPOpt_Enabled()) {
+    return;
+  }
+
+  if (hp_opt_alpha_iteration_ > 0) {
+    INFO("Hyper optimizing alpha.");
+    HPOpt_OptimizeAlpha();
+  }
+  if (hp_opt_beta_iteration_ > 0) {
+    INFO("Hyper optimizing beta.");
+    HPOpt_PrepareOptimizeBeta();
+    HPOpt_OptimizeBeta();
+  }
+}
+
+template <class Tables>
+void SamplerBase<Tables>::HPOpt_OptimizeAlpha() {
+  for (int i = 0; i < hp_opt_alpha_iteration_; i++) {
+    double denom = 0.0;
+    double diff_digamma = 0.0;
+    for (int j = 1, size = (int)doc_len_hist_.size(); j < size; j++) {
+      diff_digamma += 1.0 / (j - 1 + hp_sum_alpha_);
+      denom += doc_len_hist_[j] * diff_digamma;
+    }
+    denom -= 1.0 / hp_opt_alpha_scale_;
+
+    hp_sum_alpha_ = 0.0;
+    for (int k = 0, size = (int)docs_topic_count_hist_.size(); k < size; k++) {
+      double num = 0.0;
+      double alpha_k = hp_alpha_[k];
+      const std::vector<int>& docs_topic_k_count_hist =
+        docs_topic_count_hist_[k];
+      diff_digamma = 0.0;
+      for (int j = 1, size = (int)docs_topic_count_hist_[k].size(); j < size;
+        j++) {
+          diff_digamma += 1.0 / (j - 1 + alpha_k);
+          num += docs_topic_k_count_hist[j] * diff_digamma;
+      }
+      alpha_k = (alpha_k * num + hp_opt_alpha_shape_) / denom;
+      hp_alpha_[k] = alpha_k;
+      hp_sum_alpha_ += alpha_k;
+    }
+  }
+}
+
+template <class Tables>
+void SamplerBase<Tables>::HPOpt_PrepareOptimizeBeta() {
+  for (int m = 0; m < M_; m++) {
+    const auto& doc_topics_count = docs_topics_count_[m];
+    for (int k = 0; k < K_; k++) {
+      const int count = doc_topics_count[k];
+      if (count == 0) {
+        continue;
+      }
+      if ((int)word_topic_count_hist_.size() <= count) {
+        word_topic_count_hist_.resize(count + 1);
+      }
+      word_topic_count_hist_[count]++;
+    }
+  }
+
+  for (int k = 0; k < K_; k++) {
+    const int count = topics_count_[k];
+    if (count == 0) {
+      continue;
+    }
+    if ((int)topic_len_hist_.size() <= count) {
+      topic_len_hist_.resize(count + 1);
+    }
+    topic_len_hist_[count]++;
+  }
+}
+
+template <class Tables>
+void SamplerBase<Tables>::HPOpt_OptimizeBeta() {
+  for (int i = 0; i < hp_opt_beta_iteration_; i++) {
+    double num = 0.0;
+    double diff_digamma = 0.0;
+    for (int j = 1, size = (int)word_topic_count_hist_.size(); j < size; j++) {
+      diff_digamma += 1.0 / (j - 1 + hp_beta_);
+      num += diff_digamma * word_topic_count_hist_[j];
+    }
+
+    double denom = 0.0;
+    diff_digamma = 0.0;
+    for (int j = 1, size = (int)topic_len_hist_.size(); j < size; j++) {
+      diff_digamma += 1.0 / (j - 1 + hp_sum_beta_);
+      denom += diff_digamma * topic_len_hist_[j];
+    }
+    hp_sum_beta_ = hp_beta_ * num / denom;
+    hp_beta_ = hp_sum_beta_ / V_;
+  }
+}
+
+template <class Tables>
+void SamplerBase<Tables>::HPOpt_PostSampleDocument(int m) {
+  if (!HPOpt_Enabled()) {
+    return;
+  }
+
+  if (hp_opt_alpha_iteration_ > 0) {
+    const Doc& doc = docs_[m];
+    const auto& doc_topics_count = docs_topics_count_[m];
+    for (int k = 0; k < K_; k++) {
+      const int count = doc_topics_count[k];
+      if (count == 0) {
+        continue;
+      }
+      std::vector<int>& docs_topic_k_count_hist = docs_topic_count_hist_[k];
+      if ((int)docs_topic_k_count_hist.size() <= count) {
+        docs_topic_k_count_hist.resize(count + 1);
+      }
+      docs_topic_k_count_hist[count]++;
+    }
+
+    if (doc.N) {
+      if ((int)doc_len_hist_.size() <= doc.N) {
+        doc_len_hist_.resize(doc.N + 1);
+      }
+      doc_len_hist_[doc.N]++;
+    }
+  }
+}
+
 /************************************************************************/
 /* GibbsSampler */
 /************************************************************************/
-class GibbsSampler : public SamplerBase {
+class GibbsSampler : public SamplerBase<HashTables> {
  private:
   std::vector<double> word_topic_cdf_;  // cached
 
@@ -63,13 +360,13 @@ class GibbsSampler : public SamplerBase {
   GibbsSampler() {}
   virtual int InitializeSampler();
   virtual void SampleDocument(Word* word, int doc_length,
-                              HashTable* doc_topics_count);
+                              TableType* doc_topics_count);
 };
 
 /************************************************************************/
 /* SparseLDASampler */
 /************************************************************************/
-class SparseLDASampler : public SamplerBase {
+class SparseLDASampler : public SamplerBase<SparseTables> {
  private:
   double smooth_sum_;
   double doc_sum_;
@@ -97,7 +394,7 @@ class SparseLDASampler : public SamplerBase {
 /************************************************************************/
 /* AliasLDASampler */
 /************************************************************************/
-class AliasLDASampler : public SamplerBase {
+class AliasLDASampler : public SamplerBase<HashTables> {
  private:
   std::vector<double> p_pdf_;
   std::vector<double> q_sums_;                // for each word v
@@ -117,13 +414,13 @@ class AliasLDASampler : public SamplerBase {
 
   virtual int InitializeSampler();
   virtual void SampleDocument(Word* word, int doc_length,
-                              HashTable* doc_topics_count);
+                              TableType* doc_topics_count);
 };
 
 /************************************************************************/
 /* LightLDASampler */
 /************************************************************************/
-class LightLDASampler : public SamplerBase {
+class LightLDASampler : public SamplerBase<HashTables> {
  private:
   AliasBuilderD hp_alpha_alias_table_;
   AliasD hp_alpha_alias_;
@@ -150,7 +447,7 @@ class LightLDASampler : public SamplerBase {
   virtual int InitializeSampler();
   virtual void PostSampleCorpus();
   virtual void SampleDocument(Word* word, int doc_length,
-                              HashTable* doc_topics_count);
+                              TableType* doc_topics_count);
 
  private:
   int SampleWithWord(int v);

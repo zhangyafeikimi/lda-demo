@@ -13,7 +13,6 @@
   <ItemGroup>
     <ClCompile Include="..\src\corpus.cc" />
     <ClCompile Include="..\src\lda-train.cc" />
-    <ClCompile Include="..\src\model.cc" />
     <ClCompile Include="..\src\rand.cc" />
     <ClCompile Include="..\src\sampler.cc" />
   </ItemGroup>

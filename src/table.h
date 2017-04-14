@@ -13,6 +13,7 @@
 #include <sstream>
 #include <string>
 #include <vector>
+#include "x.h"
 
 template <class T>
 class DenseTableT {
@@ -113,7 +114,7 @@ class SparseTableT {
     bool operator()(int a, const IDCount& b) const { return a < b.id; }
   };
 
-  const IDCountCompare compare_;
+  IDCountCompare compare_;
   std::vector<IDCount> storage_;
 };
 
@@ -354,6 +355,7 @@ class TableT : public TableImpl<T> {
   bool Save(const std::string& filename) const {
     std::ofstream ofs(filename.c_str());
     if (!ofs.is_open()) {
+      ERROR("Failed to open \"%s\".", filename.c_str());
       return false;
     }
 
@@ -368,6 +370,7 @@ class TableT : public TableImpl<T> {
   bool Load(const std::string& filename) {
     std::ifstream ifs(filename.c_str());
     if (!ifs.is_open()) {
+      ERROR("Failed to open \"%s\".", filename.c_str());
       return false;
     }
 
@@ -409,6 +412,7 @@ class TablesT {
   bool Save(const std::string& filename) const {
     std::ofstream ofs(filename.c_str());
     if (!ofs.is_open()) {
+      ERROR("Failed to open \"%s\".", filename.c_str());
       return false;
     }
 
@@ -426,6 +430,7 @@ class TablesT {
   bool Load(const std::string& filename) {
     std::ifstream ifs(filename.c_str());
     if (!ifs.is_open()) {
+      ERROR("Failed to open \"%s\".", filename.c_str());
       return false;
     }
 
