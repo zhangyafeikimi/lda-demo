@@ -10,6 +10,8 @@
 #include "sampler.h"
 #include "x.h"
 
+namespace {
+
 // input options
 int doc_with_id;
 std::string input_corpus_filename;
@@ -31,79 +33,78 @@ int hp_opt_beta_iteration = 200;
 int total_iteration = 200;
 int burnin_iteration = 10;
 int log_likelihood_interval = 10;
-
-// LightLDASampler options
-int mh_step = 8;
+int mh_step = 2;
 int enable_word_proposal = 1;
 int enable_doc_proposal = 1;
 
 void Usage() {
-  fprintf(stderr,
-          "Usage: lda-train [options] INPUT_FILE [OUTPUT_PREFIX]\n"
-          "  INPUT_FILE: input corpus filename.\n"
-          "  OUTPUT_PREFIX: output filename prefix.\n"
-          "    Default is the same as INPUT_FILE.\n"
-          "\n"
-          "  Options:\n"
-          "    -doc_with_id 0/1\n"
-          "      The first column of INPUT_FILE is doc ID.\n"
-          "      Default is \"%d\".\n"
-          "    -sampler SAMPLER\n"
-          "      SAMPLER can be lda, sparselda, aliaslda, lightlda.\n"
-          "      Default is \"%s\".\n"
-          "    -K TOPIC\n"
-          "      Number of topics.\n"
-          "      Default is \"%d\".\n"
-          "    -alpha ALPHA\n"
-          "      Doc-topic prior. "
-          "0.0 enables a smart prior according to corpus.\n"
-          "      Default is \"%lg\".\n"
-          "    -beta BETA\n"
-          "      Topic-word prior.\n"
-          "      Default is \"%lg\".\n"
-          "    -hp_opt 0/1\n"
-          "      Whether to optimize ALHPA and BETA.\n"
-          "      Default is \"%d\".\n"
-          "    -hp_opt_interval INTERVAL\n"
-          "      Interval of optimizing hyper parameters.\n"
-          "      Default is \"%d\".\n"
-          "    -hp_opt_alpha_shape SHAPE\n"
-          "      One parameter used in optimizing ALHPA.\n"
-          "      Default is \"%lg\".\n"
-          "    -hp_opt_alpha_scale SCALE\n"
-          "      One parameter used in optimizing ALHPA.\n"
-          "      Default is \"%lg\".\n"
-          "    -hp_opt_alpha_iteration ITERATION\n"
-          "      Iterations of optimization ALPHA. 0 disables it.\n"
-          "      Default is \"%d\".\n"
-          "    -hp_opt_beta_iteration ITERATION\n"
-          "      Iterations of optimization BETA. 0 disables it.\n"
-          "      Default is \"%d\".\n"
-          "    -total_iteration ITERATION\n"
-          "      Iterations of scanning corpus.\n"
-          "      Default is \"%d\".\n"
-          "    -burnin_iteration ITERATION\n"
-          "      Iterations of burn in period,\n"
-          "      during which neither optimization of ALPHA and BETA\n"
-          "      nor log likelihood are disabled. 0 disables it.\n"
-          "      Default is \"%d\".\n"
-          "    -log_likelihood_interval INTERVAL\n"
-          "      Interval of calculating log likelihood. 0 disables it.\n"
-          "      Default is \"%d\".\n"
-          "    -mh_step MH_STEP\n"
-          "      Number of MH steps(aliaslda or lightlda).\n"
-          "      Default is \"%d\".\n"
-          "    -enable_word_proposal 0/1\n"
-          "      Enable word proposal(lightlda).\n"
-          "      Default is \"%d\".\n"
-          "    -enable_doc_proposal 0/1\n"
-          "      Enable doc proposal(lightlda).\n"
-          "      Default is \"%d\".\n",
-          doc_with_id, sampler.c_str(), K, alpha, beta, hp_opt, hp_opt_interval,
-          hp_opt_alpha_shape, hp_opt_alpha_scale, hp_opt_alpha_iteration,
-          hp_opt_beta_iteration, total_iteration, burnin_iteration,
-          log_likelihood_interval, mh_step, enable_word_proposal,
-          enable_doc_proposal);
+  fprintf(
+      stderr,
+      "Usage: lda-train [options] INPUT_FILE [OUTPUT_PREFIX]\n"
+      "  INPUT_FILE: input corpus filename.\n"
+      "  OUTPUT_PREFIX: output filename prefix.\n"
+      "    Default is the same as INPUT_FILE.\n"
+      "\n"
+      "  Options:\n"
+      "    -doc_with_id 0/1\n"
+      "      Whether the first column of INPUT_FILE is doc ID, and skip it.\n"
+      "      Default is \"%d\".\n"
+      "    -sampler lda/sparselda/aliaslda/lightlda\n"
+      "      Different sampling algorithms.\n"
+      "      Default is \"%s\".\n"
+      "    -K TOPIC\n"
+      "      Number of topics.\n"
+      "      Default is \"%d\".\n"
+      "    -alpha A\n"
+      "      Doc-topic prior. "
+      "0.0 enables a smart prior according to corpus.\n"
+      "      Default is \"%lg\".\n"
+      "    -beta B\n"
+      "      Topic-word prior.\n"
+      "      Default is \"%lg\".\n"
+      "    -hp_opt 0/1\n"
+      "      Whether to optimize ALPHA and BETA.\n"
+      "      Default is \"%d\".\n"
+      "    -hp_opt_interval INTERVAL\n"
+      "      Interval of optimizing hyper parameters.\n"
+      "      Default is \"%d\".\n"
+      "    -hp_opt_alpha_shape SHAPE\n"
+      "      One parameter used in optimizing ALPHA.\n"
+      "      Default is \"%lg\".\n"
+      "    -hp_opt_alpha_scale SCALE\n"
+      "      One parameter used in optimizing ALPHA.\n"
+      "      Default is \"%lg\".\n"
+      "    -hp_opt_alpha_iteration ITER\n"
+      "      Iterations of optimization ALPHA. 0 disables it.\n"
+      "      Default is \"%d\".\n"
+      "    -hp_opt_beta_iteration ITER\n"
+      "      Iterations of optimization BETA. 0 disables it.\n"
+      "      Default is \"%d\".\n"
+      "    -total_iteration ITER\n"
+      "      Iterations of training.\n"
+      "      Default is \"%d\".\n"
+      "    -burnin_iteration ITER\n"
+      "      Iterations of burn in period,\n"
+      "      during which both optimization of ALPHA and BETA\n"
+      "      and log likelihood are disabled. 0 disables it.\n"
+      "      Default is \"%d\".\n"
+      "    -log_likelihood_interval INTERVAL\n"
+      "      Interval of calculating log likelihood. 0 disables it.\n"
+      "      Default is \"%d\".\n"
+      "    -mh_step MH_STEP\n"
+      "      Number of MH steps(sampler=aliaslda/lightlda).\n"
+      "      Default is \"%d\".\n"
+      "    -enable_word_proposal 0/1\n"
+      "      Enable word proposal(sampler=lightlda).\n"
+      "      Default is \"%d\".\n"
+      "    -enable_doc_proposal 0/1\n"
+      "      Enable doc proposal(sampler=lightlda).\n"
+      "      Default is \"%d\".\n",
+      doc_with_id, sampler.c_str(), K, alpha, beta, hp_opt, hp_opt_interval,
+      hp_opt_alpha_shape, hp_opt_alpha_scale, hp_opt_alpha_iteration,
+      hp_opt_beta_iteration, total_iteration, burnin_iteration,
+      log_likelihood_interval, mh_step, enable_word_proposal,
+      enable_doc_proposal);
   exit(1);
 }
 
@@ -131,7 +132,7 @@ void Usage() {
     }                                             \
   } while (0)
 
-double xatod(const char* str) {
+inline double xatod(const char* str) {
   char* endptr;
   double d;
   errno = 0;
@@ -143,7 +144,7 @@ double xatod(const char* str) {
   return d;
 }
 
-int xatoi(const char* str) {
+inline int xatoi(const char* str) {
   char* endptr;
   int i;
   errno = 0;
@@ -251,7 +252,7 @@ void ParseArgs(int argc, char** argv) {
     Usage();
   }
 
-  CHECK(doc_with_id >= 0 && doc_with_id <= 1);
+  CHECK(doc_with_id == 0 || doc_with_id == 1);
   CHECK(sampler == "lda" || sampler == "sparselda" || sampler == "aliaslda" ||
         sampler == "lightlda");
   CHECK(K >= 2);
@@ -304,6 +305,8 @@ void Train(Sampler* p) {
   p->SaveModel(output_prefix);
   delete p;
 }
+
+}  // namespace
 
 int main(int argc, char** argv) {
   ParseArgs(argc, argv);
