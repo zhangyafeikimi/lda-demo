@@ -7,10 +7,8 @@
 #ifndef TABLE_H_
 #define TABLE_H_
 
-#include <assert.h>
 #include <algorithm>
 #include <fstream>
-#include <sstream>
 #include <string>
 #include <vector>
 #include "x.h"
@@ -27,7 +25,7 @@ class DenseTableT {
   ElementType Count(int id) const { return storage_[id]; }
 
   int NextNonZeroCountIndex(int index) const {
-    const int size = (int)storage_.size();
+    const int size = static_cast<int>(storage_.size());
     if (index >= size) {
       return size;
     }
@@ -40,7 +38,7 @@ class DenseTableT {
     return index;
   }
 
-  int Size() const { return (int)storage_.size(); }
+  int Size() const { return static_cast<int>(storage_.size()); }
   int GetID(int index) const { return index; }
   ElementType GetCount(int index) const { return storage_[index]; }
   ElementType& operator[](int id) { return storage_[id]; }
@@ -54,12 +52,13 @@ template <class T>
 class SparseTableT {
  public:
   typedef T ElementType;
-  SparseTableT() : compare_() {}
+  SparseTableT() {}
 
   void Init(int hint_size) {}
 
   ElementType Inc(int id, ElementType count) {
-    auto it = std::lower_bound(storage_.begin(), storage_.end(), id, compare_);
+    auto it = std::lower_bound(storage_.begin(), storage_.end(), id,
+                               IDCountCompare());
     if (it != storage_.end() && it->id == id) {
       return it->count += count;
     } else {
@@ -70,9 +69,10 @@ class SparseTableT {
   }
 
   ElementType Dec(int id, ElementType count) {
-    auto it = std::lower_bound(storage_.begin(), storage_.end(), id, compare_);
+    auto it = std::lower_bound(storage_.begin(), storage_.end(), id,
+                               IDCountCompare());
     if (it != storage_.end() && it->id == id) {
-      assert(it->count >= count);
+      DCHECK(it->count >= count);
       it->count -= count;
       if (it->count == 0) {
         storage_.erase(it);
@@ -81,22 +81,23 @@ class SparseTableT {
         return it->count;
       }
     } else {
-      assert(0);
+      DCHECK(0);
       return -1;
     }
   }
 
   ElementType Count(int id) const {
-    auto it = std::lower_bound(storage_.begin(), storage_.end(), id, compare_);
+    auto it = std::lower_bound(storage_.begin(), storage_.end(), id,
+                               IDCountCompare());
     if (it != storage_.end() && it->id == id) {
-      assert(it->count > 0);
+      DCHECK(it->count > 0);
       return it->count;
     }
     return 0;
   }
 
   int NextNonZeroCountIndex(int index) const { return index; }
-  int Size() const { return (int)storage_.size(); }
+  int Size() const { return static_cast<int>(storage_.size()); }
   int GetID(int index) const { return storage_[index].id; }
   ElementType GetCount(int index) const { return storage_[index].count; }
 
@@ -114,7 +115,6 @@ class SparseTableT {
     bool operator()(int a, const IDCount& b) const { return a < b.id; }
   };
 
-  IDCountCompare compare_;
   std::vector<IDCount> storage_;
 };
 
@@ -151,7 +151,7 @@ class HashTableT {
     int pos = _FindIndex(id);
     Item& item = storage_[pos];
     if (item.flag == kUsed) {
-      assert(item.count >= count);
+      DCHECK(item.count >= count);
       item.count -= count;
       if (item.count == 0) {
         item.flag = kDeleted;
@@ -160,7 +160,7 @@ class HashTableT {
       }
       return item.count;
     } else {
-      assert(0);
+      DCHECK(0);
       return -1;
     }
   }
@@ -169,14 +169,14 @@ class HashTableT {
     int pos = _FindIndex(id);
     const Item& item = storage_[pos];
     if (item.flag == kUsed) {
-      assert(item.count > 0);
+      DCHECK(item.count > 0);
       return item.count;
     }
     return 0;
   }
 
   int NextNonZeroCountIndex(int index) const {
-    const int size = (int)storage_.size();
+    const int size = static_cast<int>(storage_.size());
     if (index >= size) {
       return size;
     }
@@ -190,15 +190,15 @@ class HashTableT {
     return index;
   }
 
-  int Size() const { return (int)storage_.size(); }
+  int Size() const { return static_cast<int>(storage_.size()); }
 
   int GetID(int index) const {
-    assert(storage_[index].flag == kUsed);
+    DCHECK(storage_[index].flag == kUsed);
     return storage_[index].id;
   }
 
   ElementType GetCount(int index) const {
-    assert(storage_[index].flag == kUsed);
+    DCHECK(storage_[index].flag == kUsed);
     return storage_[index].count;
   }
 
@@ -216,7 +216,7 @@ class HashTableT {
     const int* first = prime_list;
     const int* last = prime_list + prime_list_size;
     const int* pos = std::lower_bound(first, last, n);
-    return pos == last ? *(last - 1) : *pos;
+    return pos == last ? (-1) : *pos;
   }
 
   enum {
@@ -239,7 +239,7 @@ class HashTableT {
  private:
   static int _FindIndex(int id, const std::vector<Item>& storage,
                         int storage_size) {
-    int pos = static_cast<unsigned int>(id) % storage_size;
+    int pos = id % storage_size;
     for (;;) {
       const Item& item = storage[pos];
       if (item.flag == kUsed || item.flag == kDeleted) {
@@ -258,16 +258,16 @@ class HashTableT {
         pos -= storage_size;
       }
     }
-    assert(0);
+    DCHECK(0);
     return -1;
   }
 
   int _FindIndex(int id) const {
-    return _FindIndex(id, storage_, (int)storage_.size());
+    return _FindIndex(id, storage_, static_cast<int>(storage_.size()));
   }
 
   void _Rehash() {
-    const int storage_size = (int)storage_.size();
+    const int storage_size = static_cast<int>(storage_.size());
     int size = used_ + deleted_;
     size = size + (size >> 1);  // * 1.5
     if (size <= storage_size) {
@@ -366,25 +366,6 @@ class TableT : public TableImpl<T> {
     }
     return true;
   }
-
-  bool Load(const std::string& filename) {
-    std::ifstream ifs(filename.c_str());
-    if (!ifs.is_open()) {
-      ERROR("Failed to open \"%s\".", filename.c_str());
-      return false;
-    }
-
-    int id;
-    ElementType count;
-    std::string line;
-    while (std::getline(ifs, line)) {
-      std::istringstream iss(line);
-      if (iss >> id >> count) {
-        (*this)[id] += count;
-      }
-    }
-    return true;
-  }
 };
 
 template <class Table>
@@ -427,25 +408,6 @@ class TablesT {
     return true;
   }
 
-  bool Load(const std::string& filename) {
-    std::ifstream ifs(filename.c_str());
-    if (!ifs.is_open()) {
-      ERROR("Failed to open \"%s\".", filename.c_str());
-      return false;
-    }
-
-    int i, id;
-    ElementType count;
-    std::string line;
-    while (std::getline(ifs, line)) {
-      std::istringstream iss(line);
-      if (iss >> i >> id >> count) {
-        (*this)[i][id] += count;
-      }
-    }
-    return true;
-  }
-
  private:
   int d1_;
   int d2_;
@@ -455,7 +417,6 @@ class TablesT {
 typedef TableT<int, DenseTableT> DenseTable;
 typedef TableT<int, SparseTableT> SparseTable;
 typedef TableT<int, HashTableT> HashTable;
-typedef TablesT<DenseTable> DenseTables;
 typedef TablesT<SparseTable> SparseTables;
 typedef TablesT<HashTable> HashTables;
 

@@ -265,21 +265,23 @@ void SamplerBase<Tables>::HPOpt_OptimizeAlpha() {
   for (int i = 0; i < hp_opt_alpha_iteration_; i++) {
     double denom = 0.0;
     double diff_digamma = 0.0;
-    for (int j = 1, size = (int)doc_len_hist_.size(); j < size; j++) {
+    for (int j = 1, size = static_cast<int>(doc_len_hist_.size()); j < size;
+         j++) {
       diff_digamma += 1.0 / (j - 1 + hp_sum_alpha_);
       denom += doc_len_hist_[j] * diff_digamma;
     }
     denom -= 1.0 / hp_opt_alpha_scale_;
 
     hp_sum_alpha_ = 0.0;
-    for (int k = 0, size = (int)docs_topic_count_hist_.size(); k < size; k++) {
+    for (int k = 0, size = static_cast<int>(docs_topic_count_hist_.size());
+         k < size; k++) {
       double num = 0.0;
       double alpha_k = hp_alpha_[k];
       const std::vector<int>& docs_topic_k_count_hist =
           docs_topic_count_hist_[k];
       diff_digamma = 0.0;
-      for (int j = 1, size = (int)docs_topic_count_hist_[k].size(); j < size;
-           j++) {
+      for (int j = 1, size = static_cast<int>(docs_topic_count_hist_[k].size());
+           j < size; j++) {
         diff_digamma += 1.0 / (j - 1 + alpha_k);
         num += docs_topic_k_count_hist[j] * diff_digamma;
       }
@@ -299,7 +301,7 @@ void SamplerBase<Tables>::HPOpt_PrepareOptimizeBeta() {
       if (count == 0) {
         continue;
       }
-      if ((int)word_topic_count_hist_.size() <= count) {
+      if (static_cast<int>(word_topic_count_hist_.size()) <= count) {
         word_topic_count_hist_.resize(count + 1);
       }
       word_topic_count_hist_[count]++;
@@ -311,7 +313,7 @@ void SamplerBase<Tables>::HPOpt_PrepareOptimizeBeta() {
     if (count == 0) {
       continue;
     }
-    if ((int)topic_len_hist_.size() <= count) {
+    if (static_cast<int>(topic_len_hist_.size()) <= count) {
       topic_len_hist_.resize(count + 1);
     }
     topic_len_hist_[count]++;
@@ -323,14 +325,16 @@ void SamplerBase<Tables>::HPOpt_OptimizeBeta() {
   for (int i = 0; i < hp_opt_beta_iteration_; i++) {
     double num = 0.0;
     double diff_digamma = 0.0;
-    for (int j = 1, size = (int)word_topic_count_hist_.size(); j < size; j++) {
+    for (int j = 1, size = static_cast<int>(word_topic_count_hist_.size());
+         j < size; j++) {
       diff_digamma += 1.0 / (j - 1 + hp_beta_);
       num += diff_digamma * word_topic_count_hist_[j];
     }
 
     double denom = 0.0;
     diff_digamma = 0.0;
-    for (int j = 1, size = (int)topic_len_hist_.size(); j < size; j++) {
+    for (int j = 1, size = static_cast<int>(topic_len_hist_.size()); j < size;
+         j++) {
       diff_digamma += 1.0 / (j - 1 + hp_sum_beta_);
       denom += diff_digamma * topic_len_hist_[j];
     }
@@ -354,14 +358,14 @@ void SamplerBase<Tables>::HPOpt_PostSampleDocument(int m) {
         continue;
       }
       std::vector<int>& docs_topic_k_count_hist = docs_topic_count_hist_[k];
-      if ((int)docs_topic_k_count_hist.size() <= count) {
+      if (static_cast<int>(docs_topic_k_count_hist.size()) <= count) {
         docs_topic_k_count_hist.resize(count + 1);
       }
       docs_topic_k_count_hist[count]++;
     }
 
     if (doc.N) {
-      if ((int)doc_len_hist_.size() <= doc.N) {
+      if (static_cast<int>(doc_len_hist_.size()) <= doc.N) {
         doc_len_hist_.resize(doc.N + 1);
       }
       doc_len_hist_[doc.N]++;

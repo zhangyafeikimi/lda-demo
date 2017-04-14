@@ -1,7 +1,7 @@
 // Copyright (c) 2015-2017 Contibutors.
 // Author: Yafei Zhang (zhangyafeikimi@gmail.com)
 //
-// common utils
+// common utilities
 //
 
 #ifndef X_H_
@@ -14,7 +14,7 @@
 
 inline void __LOG(const char* file, int line, const char* level,
                   const char* format, ...) {
-  char buf[1024 * 10];
+  char buf[4096];
   va_list args;
   va_start(args, format);
   vsnprintf(buf, sizeof(buf), format, args);
@@ -24,7 +24,7 @@ inline void __LOG(const char* file, int line, const char* level,
   struct tm* tm_info;
   time(&t);
   tm_info = localtime(&t);
-  fprintf(stderr, "%s %.2d:%.2d:%.2d %s:%d %s\n", level, tm_info->tm_hour,
+  fprintf(stderr, "%s%.2d:%.2d:%.2d %s:%d %s\n", level, tm_info->tm_hour,
           tm_info->tm_min, tm_info->tm_sec, file, line, buf);
   fflush(stderr);
 }
@@ -39,5 +39,18 @@ inline void __LOG(const char* file, int line, const char* level,
       exit(1);                              \
     }                                       \
   } while (0)
+
+#if !defined NDEBUG
+#define DCHECK(expr)                        \
+  do {                                      \
+    auto r = expr;                          \
+    if (!r) {                               \
+      ERROR("\"%s\" check failed.", #expr); \
+      exit(1);                              \
+    }                                       \
+  } while (0)
+#else
+#define DCHECK(expr)
+#endif
 
 #endif  // X_H_

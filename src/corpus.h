@@ -1,7 +1,7 @@
 // Copyright (c) 2015-2017 Contibutors.
 // Author: Yafei Zhang (zhangyafeikimi@gmail.com)
 //
-// LDA corpus: documents and words
+// LDA corpus including documents and words
 //
 
 #ifndef CORPUS_H_

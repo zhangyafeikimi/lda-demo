@@ -8,7 +8,7 @@
 
 // u is in [0, 1)
 static int SampleCDF(const std::vector<double>& cdf, double u) {
-  int size = (int)cdf.size();
+  int size = static_cast<int>(cdf.size());
   const double sample = u * cdf[size - 1];
   if (size < 128) {
     // brute force search
@@ -312,8 +312,8 @@ void AliasLDASampler::SampleDocument(Word* word, int doc_length,
 
     // construct p: first part of the proposal
     p_sum = 0.0;
-    HashTable::const_iterator first = doc_topics_count->begin();
-    HashTable::const_iterator last = doc_topics_count->end();
+    auto first = doc_topics_count->begin();
+    auto last = doc_topics_count->end();
     for (; first != last; ++first) {
       const int k = first.id();
       double& pdf = p_pdf_[k];
@@ -325,12 +325,12 @@ void AliasLDASampler::SampleDocument(Word* word, int doc_length,
     // prepare samples from q: second part of the proposal
     q_sum = 0.0;
     std::vector<int>& word_v_q_samples = q_samples_[v];
-    const int word_v_q_samples_size = (int)word_v_q_samples.size();
+    const int word_v_q_samples_size = static_cast<int>(word_v_q_samples.size());
     if (word_v_q_samples_size < mh_step_) {
       // construct q
       q_pdf_.assign(K_, 0.0);
-      HashTable::const_iterator first = word_topics_count.begin();
-      HashTable::const_iterator last = word_topics_count.end();
+      auto first = word_topics_count.begin();
+      auto last = word_topics_count.end();
       for (; first != last; ++first) {
         const int k = first.id();
         double& pdf = q_pdf_[k];
@@ -367,8 +367,8 @@ void AliasLDASampler::SampleDocument(Word* word, int doc_length,
       sample = random_.GetNext() * (p_sum + q_sum);
       if (sample < p_sum) {
         // sample from p
-        HashTable::const_iterator first = doc_topics_count->begin();
-        HashTable::const_iterator last = doc_topics_count->end();
+        auto first = doc_topics_count->begin();
+        auto last = doc_topics_count->end();
         for (; first != last; ++first) {
           const int k = first.id();
           sample -= p_pdf_[k];
@@ -411,7 +411,7 @@ void AliasLDASampler::SampleDocument(Word* word, int doc_length,
                       temp_t / temp_s * (N_ms_prime + hp_alpha_s) * temp_s /
                       (N_mt_prime + hp_alpha_t) / temp_t;
 #endif
-        assert(accept_rate >= 0.0);
+        DCHECK(accept_rate >= 0.0);
         if (random_.GetNext() < accept_rate) {
           word->k = t;
           s = t;
@@ -525,7 +525,7 @@ void LightLDASampler::SampleDocument(Word* word, int doc_length,
                         (N_vt + hp_beta_) * (N_t + hp_sum_beta_) /
                         (N_s + hp_sum_beta_);
 
-          assert(accept_rate >= 0.0);
+          DCHECK(accept_rate >= 0.0);
           if (random_.GetNext() < accept_rate) {
             word->k = t;
             s = t;
@@ -571,7 +571,7 @@ void LightLDASampler::SampleDocument(Word* word, int doc_length,
                         (N_t_prime + hp_sum_beta_) * (N_ms + hp_alpha_s) /
                         (N_mt + hp_alpha_t);
 
-          assert(accept_rate >= 0.0);
+          DCHECK(accept_rate >= 0.0);
           if (random_.GetNext() < accept_rate) {
             word->k = t;
             s = t;
@@ -605,8 +605,8 @@ int LightLDASampler::SampleWithWord(int v) {
     double sum = 0.0;
     const HashTable& word_topics_count = words_topics_count_[v];
     word_topics_pdf_.assign(K_, 0.0);
-    HashTable::const_iterator first = word_topics_count.begin();
-    HashTable::const_iterator last = word_topics_count.end();
+    auto first = word_topics_count.begin();
+    auto last = word_topics_count.end();
     for (; first != last; ++first) {
       const int k = first.id();
       double& pdf = word_topics_pdf_[k];
@@ -641,7 +641,7 @@ int LightLDASampler::SampleWithDoc(Word* word, int doc_length, int v) {
   if (sample < hp_sum_alpha_) {
     return hp_alpha_alias_.Sample(sample / hp_sum_alpha_);
   } else {
-    int index = (int)(sample - hp_sum_alpha_);
+    int index = static_cast<int>(sample - hp_sum_alpha_);
     if (index == doc_length) {
       // rare numerical errors may lie in this branch
       index--;

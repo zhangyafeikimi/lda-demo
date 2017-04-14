@@ -23,8 +23,10 @@ class Random {
         float_dist_(0, 1),
         int_dist_(0, std::numeric_limits<int>::max()) {}
 
+  // uniform double in [0, 1)
   double GetNext() { return float_dist_(engine_); }
 
+  // uniform int in [0, K)
   template <typename Int>
   int GetNext(Int K) {
     return static_cast<int>(int_dist_(engine_) % K);
