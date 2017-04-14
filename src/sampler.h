@@ -424,7 +424,7 @@ class AliasLDASampler : public SamplerBase<HashTables> {
   std::vector<double> q_sums_;                // for each word v
   std::vector<std::vector<int> > q_samples_;  // for each word v
   std::vector<double> q_pdf_;
-  AliasBuilderD q_alias_table_;
+  AliasBuilder q_alias_table_;
   AliasD q_alias_;
 
   int mh_step_;
@@ -446,9 +446,9 @@ class AliasLDASampler : public SamplerBase<HashTables> {
 /************************************************************************/
 class LightLDASampler : public SamplerBase<HashTables> {
  private:
-  AliasBuilderD hp_alpha_alias_table_;
+  AliasBuilder hp_alpha_alias_table_;
   AliasD hp_alpha_alias_;
-  AliasBuilderD word_alias_table_;
+  AliasBuilder word_alias_table_;
   AliasD word_alias_;
   std::vector<double> word_topics_pdf_;
   std::vector<std::vector<int> > words_topic_samples_;
