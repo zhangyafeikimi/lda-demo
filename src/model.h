@@ -98,7 +98,7 @@ class Model : public Corpus {
     INFO("Saving model.");
     return SaveMeta(prefix + "-meta") &&
            SaveTopicCount(prefix + "-topic-count") &&
-           SaveWordTopicCount(prefix + "-word-topic-count") && PrintDone();
+           SaveWordTopicCount(prefix + "-word-topic-count");
   }
 
  private:

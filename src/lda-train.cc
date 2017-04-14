@@ -4,6 +4,8 @@
 // LDA train main
 //
 
+#include <errno.h>
+#include <stdlib.h>
 #include <string>
 #include "sampler.h"
 #include "x.h"
@@ -105,6 +107,54 @@ void Usage() {
   exit(1);
 }
 
+#define COMSUME_1_ARG(argc, argv, i)     \
+  do {                                   \
+    for (int j = i; j < argc - 1; j++) { \
+      argv[j] = argv[j + 1];             \
+    }                                    \
+    argc -= 1;                           \
+  } while (0)
+
+#define COMSUME_2_ARG(argc, argv, i)     \
+  do {                                   \
+    for (int j = i; j < argc - 2; j++) { \
+      argv[j] = argv[j + 2];             \
+    }                                    \
+    argc -= 2;                           \
+  } while (0)
+
+#define CHECK_MISSING_ARG(argc, argv, i, action)  \
+  do {                                            \
+    if (i + 1 == argc) {                          \
+      ERROR("\"%s\" requires a value.", argv[i]); \
+      action;                                     \
+    }                                             \
+  } while (0)
+
+double xatod(const char* str) {
+  char* endptr;
+  double d;
+  errno = 0;
+  d = strtod(str, &endptr);
+  if (errno != 0 || str == endptr) {
+    ERROR("\"%s\" is not a double.", str);
+    exit(1);
+  }
+  return d;
+}
+
+int xatoi(const char* str) {
+  char* endptr;
+  int i;
+  errno = 0;
+  i = static_cast<int>(strtol(str, &endptr, 10));
+  if (errno != 0 || str == endptr) {
+    ERROR("\"%s\" is not an integer.", str);
+    exit(1);
+  }
+  return i;
+}
+
 void ParseArgs(int argc, char** argv) {
   if (argc == 1) {
     Usage();
@@ -117,7 +167,7 @@ void ParseArgs(int argc, char** argv) {
       Usage();
     }
 
-    if (strncmp(s.c_str(), "--", 2) == 0) {
+    if (s.size() >= 2 && s[0] == '-' && s[1] == '-') {
       s.erase(s.begin());
     }
 

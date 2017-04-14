@@ -12,6 +12,8 @@
 #include "alias.h"
 #include "model.h"
 #include "rand.h"
+#include "table.h"
+#include "x.h"
 
 /************************************************************************/
 /* SamplerBase */
@@ -19,6 +21,33 @@
 template <class Tables>
 class SamplerBase : public Model<Tables> {
  protected:
+  typedef Model<Tables> BaseType;
+  using BaseType::docs_;
+  using BaseType::words_;
+  using BaseType::M_;
+  using BaseType::V_;
+  using BaseType::K_;
+  using BaseType::topics_count_;
+  using BaseType::docs_topics_count_;
+  using BaseType::words_topics_count_;
+  using BaseType::hp_alpha_;
+  using BaseType::hp_sum_alpha_;
+  using BaseType::hp_beta_;
+  using BaseType::hp_sum_beta_;
+  using BaseType::hp_opt_;
+  using BaseType::hp_opt_interval_;
+  using BaseType::hp_opt_alpha_shape_;
+  using BaseType::hp_opt_alpha_scale_;
+  using BaseType::hp_opt_alpha_iteration_;
+  using BaseType::hp_opt_beta_iteration_;
+  using BaseType::docs_topic_count_hist_;
+  using BaseType::doc_len_hist_;
+  using BaseType::word_topic_count_hist_;
+  using BaseType::topic_len_hist_;
+  using BaseType::total_iteration_;
+  using BaseType::burnin_iteration_;
+  using BaseType::log_likelihood_interval_;
+  using BaseType::iteration_;
   Random random_;
 
  public:
@@ -125,7 +154,7 @@ double SamplerBase<Tables>::LogLikelihood() const {
       double word_sum = 0.0;
       for (int k = 0; k < K_; k++) {
         double phi_kv = (words_topics_count_[v][k] + hp_beta_) /
-          (topics_count_[k] + hp_sum_beta_);
+                        (topics_count_[k] + hp_sum_beta_);
         word_sum += (doc_topics_count[k] + hp_alpha_[k]) * phi_kv;
       }
       word_sum /= (doc.N + hp_sum_alpha_);
@@ -137,49 +166,39 @@ double SamplerBase<Tables>::LogLikelihood() const {
 
 template <class Tables>
 int SamplerBase<Tables>::Train() {
-  time_t begin, end;
-  time(&begin);
-
-  INFO("Training.");
+  INFO("Training begins.");
 
   if (InitializeSampler() != 0) {
     return -1;
   }
 
   for (iteration_ = 1; iteration_ <= total_iteration_; iteration_++) {
-    time_t iter_begin, iter_end;
-
-    time(&iter_begin);
-    INFO("Iteration %d started.", iteration_);
+    INFO("Iteration %d begins.", iteration_);
     PreSampleCorpus();
     SampleCorpus();
     PostSampleCorpus();
-    time(&iter_end);
-
-    INFO("Iteration %d ended, cost %d seconds.", iteration_,
-      (int)(iter_end - iter_begin));
 
     if (iteration_ > burnin_iteration_ &&
-      iteration_ % log_likelihood_interval_ == 0) {
-        time(&iter_begin);
-        INFO("Calculating LogLikelihood.");
-        const double llh = LogLikelihood();
-        time(&iter_end);
-        INFO("LogLikelihood(total/word)=%lg/%lg, cost %d seconds.", llh,
-          llh / words_.size(), (int)(iter_end - iter_begin));
+        iteration_ % log_likelihood_interval_ == 0) {
+      INFO("Calculating LogLikelihood.");
+      const double llh = LogLikelihood();
+      INFO("LogLikelihood(total/word)=%lg/%lg.", llh, llh / words_.size());
     }
   }
 
-  time(&end);
-  INFO("Training completed, cost %d seconds.", (int)(end - begin));
+  INFO("Training ended.");
   return 0;
 }
 
 template <class Tables>
-void SamplerBase<Tables>::PreSampleCorpus() { HPOpt_Initialize(); }
+void SamplerBase<Tables>::PreSampleCorpus() {
+  HPOpt_Initialize();
+}
 
 template <class Tables>
-void SamplerBase<Tables>::PostSampleCorpus() { HPOpt_Optimize(); }
+void SamplerBase<Tables>::PostSampleCorpus() {
+  HPOpt_Optimize();
+}
 
 template <class Tables>
 void SamplerBase<Tables>::SampleCorpus() {
@@ -194,7 +213,9 @@ template <class Tables>
 void SamplerBase<Tables>::PreSampleDocument(int m) {}
 
 template <class Tables>
-void SamplerBase<Tables>::PostSampleDocument(int m) { HPOpt_PostSampleDocument(m); }
+void SamplerBase<Tables>::PostSampleDocument(int m) {
+  HPOpt_PostSampleDocument(m);
+}
 
 template <class Tables>
 void SamplerBase<Tables>::SampleDocument(int m) {
@@ -206,8 +227,7 @@ void SamplerBase<Tables>::SampleDocument(int m) {
 
 template <class Tables>
 void SamplerBase<Tables>::SampleDocument(Word* word, int doc_length,
-                                 TableType* doc_topics_count) {
-}
+                                         TableType* doc_topics_count) {}
 
 template <class Tables>
 void SamplerBase<Tables>::HPOpt_Initialize() {
@@ -256,12 +276,12 @@ void SamplerBase<Tables>::HPOpt_OptimizeAlpha() {
       double num = 0.0;
       double alpha_k = hp_alpha_[k];
       const std::vector<int>& docs_topic_k_count_hist =
-        docs_topic_count_hist_[k];
+          docs_topic_count_hist_[k];
       diff_digamma = 0.0;
       for (int j = 1, size = (int)docs_topic_count_hist_[k].size(); j < size;
-        j++) {
-          diff_digamma += 1.0 / (j - 1 + alpha_k);
-          num += docs_topic_k_count_hist[j] * diff_digamma;
+           j++) {
+        diff_digamma += 1.0 / (j - 1 + alpha_k);
+        num += docs_topic_k_count_hist[j] * diff_digamma;
       }
       alpha_k = (alpha_k * num + hp_opt_alpha_shape_) / denom;
       hp_alpha_[k] = alpha_k;
