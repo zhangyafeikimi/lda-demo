@@ -13,6 +13,4 @@ A LDA demo for various inference algorithms:
 
 ## Usage
 
-TODO
-
-    ./lda-train
+See example.
