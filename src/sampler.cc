@@ -4,7 +4,6 @@
 
 #include "sampler.h"
 #include <random>
-#include "x.h"
 
 // u is in [0, 1)
 static int SampleCDF(const std::vector<double>& cdf, double u) {
@@ -24,7 +23,7 @@ static int SampleCDF(const std::vector<double>& cdf, double u) {
     int count = size, half_count;
     int first = 0, middle;
     while (count > 0) {
-      half_count = count / 2;
+      half_count = count >> 1;
       middle = first + half_count;
       if (sample <= cdf[middle]) {
         count = half_count;
@@ -44,13 +43,9 @@ static inline int SampleCDF(const std::vector<double>& cdf, Random* gen) {
 /************************************************************************/
 /* GibbsSampler */
 /************************************************************************/
-int GibbsSampler::InitializeSampler() {
-  if (SamplerBase::InitializeSampler() != 0) {
-    return -1;
-  }
-
+void GibbsSampler::Init() {
+  Sampler::Init();
   word_topic_cdf_.resize(K_);
-  return 0;
 }
 
 void GibbsSampler::SampleDocument(Word* word, int doc_length,
@@ -87,22 +82,17 @@ void GibbsSampler::SampleDocument(Word* word, int doc_length,
 /************************************************************************/
 /* SparseLDASampler */
 /************************************************************************/
-int SparseLDASampler::InitializeSampler() {
-  if (SamplerBase::InitializeSampler() != 0) {
-    return -1;
-  }
-
+void SparseLDASampler::Init() {
+  Sampler::Init();
   smooth_pdf_.resize(K_);
   doc_pdf_.resize(K_);
   word_pdf_.resize(K_);
   cache_.resize(K_);
   PrepareSmoothBucket();
-  return 0;
 }
 
 void SparseLDASampler::PostSampleCorpus() {
-  SamplerBase::PostSampleCorpus();
-
+  Sampler::PostSampleCorpus();
   if (HPOpt_Enabled()) {
     PrepareSmoothBucket();
   }
@@ -116,13 +106,11 @@ void SparseLDASampler::PostSampleDocument(int m) {
     const int k = first.id();
     cache_[k] = hp_alpha_[k] / (topics_count_[k] + hp_sum_beta_);
   }
-
-  SamplerBase::HPOpt_PostSampleDocument(m);
+  Sampler::HPOpt_PostSampleDocument(m);
 }
 
 void SparseLDASampler::SampleDocument(int m) {
   PrepareDocBucket(m);
-
   const int N = docs_[m + 1] - docs_[m];
   Word* word = &words_[docs_[m]];
   for (int n = 0; n < N; n++, word++) {
@@ -256,23 +244,16 @@ void SparseLDASampler::PrepareWordBucket(int v) {
 /************************************************************************/
 /* AliasLDASampler */
 /************************************************************************/
-int AliasLDASampler::InitializeSampler() {
-  if (SamplerBase::InitializeSampler() != 0) {
-    return -1;
-  }
-
+void AliasLDASampler::Init() {
+  Sampler::Init();
   p_pdf_.resize(K_);
   q_sums_.resize(V_);
   q_samples_.resize(V_);
   q_pdf_.resize(K_);
-  if (mh_step_ == 0) {
-    mh_step_ = 8;
-  }
-  return 0;
 }
 
 void AliasLDASampler::SampleDocument(Word* word, int doc_length,
-                                     HashTable* doc_topics_count) {
+                                     TableType* doc_topics_count) {
   int s, t;
 // Macro SMOLA_ALIAS_LDA implements the pure algorithm from
 // Alex Smola's paper. Otherwise,
@@ -291,7 +272,7 @@ void AliasLDASampler::SampleDocument(Word* word, int doc_length,
 
   for (int n = 0; n < doc_length; n++, word++) {
     const int v = word->v;
-    HashTable& word_topics_count = words_topics_count_[v];
+    auto& word_topics_count = words_topics_count_[v];
     const int old_k = word->k;
     s = old_k;
 
@@ -323,7 +304,7 @@ void AliasLDASampler::SampleDocument(Word* word, int doc_length,
 
     // prepare samples from q: second part of the proposal
     q_sum = 0.0;
-    std::vector<int>& word_v_q_samples = q_samples_[v];
+    auto& word_v_q_samples = q_samples_[v];
     const int word_v_q_samples_size = static_cast<int>(word_v_q_samples.size());
     if (word_v_q_samples_size < mh_step_) {
       // construct q
@@ -437,24 +418,16 @@ void AliasLDASampler::SampleDocument(Word* word, int doc_length,
 /************************************************************************/
 /* LightLDASampler */
 /************************************************************************/
-int LightLDASampler::InitializeSampler() {
-  if (SamplerBase::InitializeSampler() != 0) {
-    return -1;
-  }
-
+void LightLDASampler::Init() {
+  Sampler::Init();
   std::vector<double> hp_alpha = hp_alpha_;
   hp_alpha_alias_table_.Build(&hp_alpha_alias_, &hp_alpha, hp_sum_alpha_);
   word_topics_pdf_.resize(K_);
   words_topic_samples_.resize(V_);
-  if (mh_step_ == 0) {
-    mh_step_ = 8;
-  }
-  return 0;
 }
 
 void LightLDASampler::PostSampleCorpus() {
-  SamplerBase::PostSampleCorpus();
-
+  Sampler::PostSampleCorpus();
   if (HPOpt_Enabled()) {
     if (hp_opt_alpha_iteration_ > 0) {
       std::vector<double> hp_alpha = hp_alpha_;
@@ -464,7 +437,7 @@ void LightLDASampler::PostSampleCorpus() {
 }
 
 void LightLDASampler::SampleDocument(Word* word, int doc_length,
-                                     HashTable* doc_topics_count) {
+                                     TableType* doc_topics_count) {
   int s, t;
   int N_s, N_vs, N_ms, N_t, N_vt, N_mt;
   int N_s_prime, N_vs_prime, N_ms_prime;
@@ -475,7 +448,7 @@ void LightLDASampler::SampleDocument(Word* word, int doc_length,
 
   for (int n = 0; n < doc_length; n++, word++) {
     const int v = word->v;
-    HashTable& word_topics_count = words_topics_count_[v];
+    auto& word_topics_count = words_topics_count_[v];
     const int old_k = word->k;
     s = old_k;
 
@@ -599,10 +572,10 @@ void LightLDASampler::SampleDocument(Word* word, int doc_length,
 
 int LightLDASampler::SampleWithWord(int v) {
   // word proposal: (N_vk + beta)/(N_k + sum_beta)
-  std::vector<int>& word_v_topic_samples = words_topic_samples_[v];
+  auto& word_v_topic_samples = words_topic_samples_[v];
   if (word_v_topic_samples.empty()) {
     double sum = 0.0;
-    const HashTable& word_topics_count = words_topics_count_[v];
+    const auto& word_topics_count = words_topics_count_[v];
     word_topics_pdf_.assign(K_, 0.0);
     auto first = word_topics_count.begin();
     auto last = word_topics_count.end();

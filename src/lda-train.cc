@@ -302,7 +302,7 @@ void Train(Sampler* p) {
 
   CHECK(p->LoadCorpus(input_corpus_filename, doc_with_id != 0));
   p->Train();
-  p->SaveModel(output_prefix);
+  CHECK(p->SaveModel(output_prefix));
   delete p;
 }
 

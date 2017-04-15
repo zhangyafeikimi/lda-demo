@@ -13,7 +13,7 @@
 #include <vector>
 #include "x.h"
 
-template <class T>
+template <typename T>
 class DenseTableT {
  public:
   typedef T ElementType;
@@ -48,7 +48,7 @@ class DenseTableT {
   std::vector<ElementType> storage_;
 };
 
-template <class T>
+template <typename T>
 class SparseTableT {
  public:
   typedef T ElementType;
@@ -118,7 +118,7 @@ class SparseTableT {
   std::vector<IDCount> storage_;
 };
 
-template <class T>
+template <typename T>
 class HashTableT {
  public:
   typedef T ElementType;
@@ -293,7 +293,7 @@ class HashTableT {
   }
 };
 
-template <class T, template <class> class TableImpl>
+template <typename T, template <typename> class TableImpl>
 class TableT : public TableImpl<T> {
  public:
   typedef T ElementType;

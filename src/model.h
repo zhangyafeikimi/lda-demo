@@ -11,6 +11,7 @@
 #include <string>
 #include <vector>
 #include "corpus.h"
+#include "rand.h"
 #include "table.h"
 #include "x.h"
 
@@ -38,61 +39,49 @@ class Model : public Corpus {
   double hp_beta_;
   double hp_sum_beta_;
 
-  // hyper parameters optimizations
-  int hp_opt_;
-  int hp_opt_interval_;
-  double hp_opt_alpha_shape_;
-  double hp_opt_alpha_scale_;
-  int hp_opt_alpha_iteration_;
-  int hp_opt_beta_iteration_;
-  // docs_topic_count_hist_[k][n]:
-  // # of documents in which topic "k" occurs "n" times.
-  std::vector<std::vector<int> > docs_topic_count_hist_;
-  // doc_len_hist_[n]:
-  // # of documents whose length are "n".
-  std::vector<int> doc_len_hist_;
-  // word_topic_count_hist_[n]:
-  // # of words which are assigned to a topic "n" times.
-  std::vector<int> word_topic_count_hist_;
-  // topic_len_hist_[n]:
-  // # of topics which occurs "n" times.
-  std::vector<int> topic_len_hist_;
-
-  // iteration variables
-  int total_iteration_;
-  int burnin_iteration_;
-  int log_likelihood_interval_;
-  int iteration_;
+  Random random_;
 
  public:
-  Model()
-      : K_(0),
-        hp_sum_alpha_(0.0),
-        hp_beta_(0.0),
-        hp_opt_(0),
-        hp_opt_interval_(0),
-        hp_opt_alpha_shape_(0.0),
-        hp_opt_alpha_scale_(0.0),
-        hp_opt_alpha_iteration_(0),
-        hp_opt_beta_iteration_(0),
-        total_iteration_(0),
-        burnin_iteration_(0),
-        log_likelihood_interval_(0),
-        iteration_(0) {}
-  virtual ~Model() {}
+  Model() : K_(0), hp_sum_alpha_(0.0), hp_beta_(0.0) {}
 
   int& K() { return K_; }
   double& alpha() { return hp_sum_alpha_; }
   double& beta() { return hp_beta_; }
-  int& hp_opt() { return hp_opt_; }
-  int& hp_opt_interval() { return hp_opt_interval_; }
-  double& hp_opt_alpha_shape() { return hp_opt_alpha_shape_; }
-  double& hp_opt_alpha_scale() { return hp_opt_alpha_scale_; }
-  int& hp_opt_alpha_iteration() { return hp_opt_alpha_iteration_; }
-  int& hp_opt_beta_iteration() { return hp_opt_beta_iteration_; }
-  int& total_iteration() { return total_iteration_; }
-  int& burnin_iteration() { return burnin_iteration_; }
-  int& log_likelihood_interval() { return log_likelihood_interval_; }
+
+  virtual void Init() {
+    topics_count_.Init(K_);
+    docs_topics_count_.Init(M_, K_);
+    words_topics_count_.Init(V_, K_);
+
+    // random initialize topics
+    for (int m = 0; m < M_; m++) {
+      const int N = docs_[m + 1] - docs_[m];
+      Word* word = &words_[docs_[m]];
+      auto& doc_topics_count = docs_topics_count_[m];
+      for (int n = 0; n < N; n++, word++) {
+        const int v = word->v;
+        const int new_topic = random_.GetNext(K_);
+        word->k = new_topic;
+        ++topics_count_[new_topic];
+        ++doc_topics_count[new_topic];
+        ++words_topics_count_[v][new_topic];
+      }
+    }
+
+    if (hp_sum_alpha_ <= 0) {
+      const double avg_doc_len = words_.size() * 1.0 / M_;
+      hp_alpha_.resize(K_, avg_doc_len / K_);
+      hp_sum_alpha_ = avg_doc_len;
+    } else {
+      hp_alpha_.resize(K_, hp_sum_alpha_);
+      hp_sum_alpha_ = hp_sum_alpha_ * K_;
+    }
+
+    if (hp_beta_ <= 0) {
+      hp_beta_ = 0.1;
+    }
+    hp_sum_beta_ = V_ * hp_beta_;
+  }
 
   bool SaveModel(const std::string& prefix) const {
     INFO("Saving model.");
