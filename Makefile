@@ -20,17 +20,17 @@ src/corpus.o \
 src/lda-train.o \
 src/rand.o \
 src/sampler.o
-BIN= lda-train$(EXE)
+BIN=lda-train$(EXE)
 
 all: $(BIN)
 
 $(BIN): $(OBJECT)
 	$(CXX) -o $@ $^ $(LDFLAGS)
 
-*.o: *.cc
-	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -o $@ $^
+%.o: %.cc
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c -o $@ $^
 
 clean:
-	rm -f $(OBJECT) $(LIB) $(BIN)
+	rm -f $(OBJECT) $(BIN)
 
 .PHONY: all clean
