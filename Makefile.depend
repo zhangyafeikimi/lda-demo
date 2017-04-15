@@ -1,0 +1,6 @@
+lda-train.o: src/lda-train.cc src/sampler.h src/alias.h src/model.h \
+ src/corpus.h src/table.h src/x.h src/rand.h
+sampler.o: src/sampler.cc src/sampler.h src/alias.h src/model.h \
+ src/corpus.h src/table.h src/x.h src/rand.h
+corpus.o: src/corpus.cc src/corpus.h src/x.h
+rand.o: src/rand.cc src/rand.h

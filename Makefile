@@ -1,4 +1,5 @@
-CXX=g++
+CXX?=g++
+LINK?=$(CXX)
 CPPFLAGS+=-DNDEBUG
 CXXFLAGS+=-g -Wall -Wextra -Werror -Wendif-labels -Wmissing-include-dirs -Wmultichar -Wno-unused-parameter -Wpointer-arith -Wnon-virtual-dtor -O3 -std=c++11 -fopenmp
 LDFLAGS+=-fopenmp
@@ -15,22 +16,24 @@ else
 	endif
 endif
 
-OBJECT=\
-src/corpus.o \
-src/lda-train.o \
-src/rand.o \
-src/sampler.o
-BIN=lda-train$(EXE)
+SOURCE:=$(wildcard src/*.cc)
+OBJECT:=$(subst src/,,$(patsubst %.cc,%.o,$(SOURCE)))
+BIN:=lda-train$(EXE)
 
 all: $(BIN)
 
-$(BIN): $(OBJECT)
-	$(CXX) -o $@ $^ $(LDFLAGS)
+include Makefile.depend
 
-%.o: %.cc
-	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c -o $@ $^
+$(BIN): $(OBJECT)
+	$(LINK) -o $@ $^ $(LDFLAGS)
+
+%.o: src/%.cc
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c -o $@ $<
+
+depend: $(SOURCE)
+	$(CXX) $(CPPFLAGS) -E -MM $^ > Makefile.depend
 
 clean:
 	rm -f $(OBJECT) $(BIN)
 
-.PHONY: all clean
+.PHONY: all clean depend

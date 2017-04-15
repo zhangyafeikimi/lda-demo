@@ -41,14 +41,7 @@ inline void __LOG(const char* file, int line, const char* level,
   } while (0)
 
 #if !defined NDEBUG
-#define DCHECK(expr)                        \
-  do {                                      \
-    auto r = expr;                          \
-    if (!r) {                               \
-      ERROR("\"%s\" check failed.", #expr); \
-      exit(1);                              \
-    }                                       \
-  } while (0)
+#define DCHECK(expr) CHECK(expr)
 #else
 #define DCHECK(expr)
 #endif
